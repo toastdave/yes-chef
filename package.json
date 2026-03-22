@@ -1,0 +1,20 @@
+{
+  "name": "yes-chef",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first coding-agent control plane.",
+  "bin": {
+    "yeschef": "src/cli/index.ts"
+  },
+  "scripts": {
+    "cli": "bun run src/cli/index.ts",
+    "daemon": "bun run src/daemon/server.ts",
+    "doctor": "bun run src/cli/index.ts doctor",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.3"
+  }
+}

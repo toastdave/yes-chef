@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.DS_Store
+.yeschef/db/*.sqlite
+.yeschef/db/*.sqlite-shm
+.yeschef/db/*.sqlite-wal
+.yeschef/runs/*.jsonl
+.yeschef/artifacts/**
+.yeschef/menus/**
+.yeschef/workspaces/**
+!.yeschef/db/.gitkeep
+!.yeschef/runs/.gitkeep
+!.yeschef/artifacts/.gitkeep
+!.yeschef/menus/.gitkeep
+!.yeschef/workspaces/.gitkeep
+!.yeschef/prompts/.gitkeep
+!.yeschef/patches/.gitkeep

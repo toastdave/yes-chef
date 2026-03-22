@@ -1,0 +1,71 @@
+{
+  "project": {
+    "name": "yes-chef",
+    "baseBranch": "main"
+  },
+  "defaults": {
+    "backend": "codex",
+    "mode": "safe",
+    "profile": "default"
+  },
+  "backends": {
+    "codex": {
+      "command": "codex",
+      "args": []
+    },
+    "claude": {
+      "command": "claude",
+      "args": []
+    },
+    "opencode": {
+      "command": "opencode",
+      "args": []
+    }
+  },
+  "roles": {
+    "chef": {
+      "backend": "codex",
+      "model": "reasoning",
+      "promptTemplate": "chef"
+    },
+    "sous-chef": {
+      "backend": "codex",
+      "model": "reasoning",
+      "promptTemplate": "planner"
+    },
+    "line-cook": {
+      "backend": "codex",
+      "model": "coding",
+      "promptTemplate": "implementer"
+    },
+    "expo": {
+      "backend": "codex",
+      "model": "reasoning",
+      "promptTemplate": "validator"
+    },
+    "critic": {
+      "backend": "codex",
+      "model": "reasoning",
+      "promptTemplate": "reviewer"
+    }
+  },
+  "modes": {
+    "safe": {
+      "maxRetries": 2,
+      "requireReview": true,
+      "requireBrowserForUi": false
+    }
+  },
+  "validations": {
+    "typecheck": "bun run typecheck"
+  },
+  "packs": {
+    "browser": {
+      "enabled": false
+    }
+  },
+  "ui": {
+    "theme": "yes-chef",
+    "streamMode": "events"
+  }
+}

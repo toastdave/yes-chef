@@ -1,0 +1,26 @@
+# PRD 001: Worktrees and Scoped Repair Orders
+
+## Problem
+
+The v1 scaffold can track workspace metadata, but it does not yet create isolated git worktrees or generate targeted repair orders after failed validations.
+
+## Goal
+
+Add reliable worktree creation, locking, cleanup, and retry scheduling so failed orders can be repaired with only the relevant context.
+
+## Outcomes
+
+- Each write-capable order can run in an isolated worktree.
+- Validation failures create repair orders instead of rerunning the full menu.
+- Retry payloads include failing outputs, changed files, and acceptance criteria.
+
+## Non-goals
+
+- Distributed workers
+- Remote sandboxes
+- Automatic merge conflict resolution
+
+## Notes
+
+- Keep write execution sequential by default.
+- Persist worktree lifecycle and retry lineage in SQLite.
