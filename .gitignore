@@ -7,6 +7,7 @@ dist/
 .yeschef/runs/*.jsonl
 .yeschef/artifacts/**
 .yeschef/menus/**
+.yeschef/prompts/**
 .yeschef/workspaces/**
 !.yeschef/db/.gitkeep
 !.yeschef/runs/.gitkeep
