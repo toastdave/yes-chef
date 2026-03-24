@@ -6,6 +6,7 @@ import { runFireCommand } from "./commands/fire.ts";
 import { runLogsCommand } from "./commands/logs.ts";
 import { runPassCommand } from "./commands/pass.ts";
 import { runPrepCommand } from "./commands/prep.ts";
+import { runSetupCommand } from "./commands/setup.ts";
 import { runStatusCommand } from "./commands/status.ts";
 
 const [command, ...args] = process.argv.slice(2);
@@ -23,6 +24,9 @@ try {
       break;
     case "status":
       await runStatusCommand();
+      break;
+    case "setup":
+      await runSetupCommand(args);
       break;
     case "logs":
       await runLogsCommand(args);
@@ -52,6 +56,7 @@ Commands:
   yeschef fire <menu-id>
   yeschef pass <menu-id>
   yeschef status
+  yeschef setup
   yeschef logs <run-id>
   yeschef doctor`);
 }

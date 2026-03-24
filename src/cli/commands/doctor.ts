@@ -1,40 +1,43 @@
-import { loadConfig } from "../../core/config.ts";
+import { listResolvedAgents, resolveAgent, resolveAgentIdForRole } from "../../core/agents.ts";
+import { listBackendAvailability } from "../../core/backends.ts";
+import { loadConfigWithMeta } from "../../core/config.ts";
 import { ensureRuntimePaths } from "../../core/fs.ts";
 import { migrateDatabase } from "../../db/migrate.ts";
 import { daemonUrl } from "../client.ts";
 
 export async function runDoctorCommand(): Promise<void> {
-  const config = await loadConfig();
+  const loaded = await loadConfigWithMeta();
+  const { config, sources } = loaded;
   const runtimePaths = await ensureRuntimePaths();
   await migrateDatabase();
-
-  const checks = [
-    [`config`, "ok", config.project.name],
-    [`runtime`, "ok", runtimePaths.runtimeRoot],
-    [`database`, "ok", runtimePaths.dbPath],
-    [`backend:${config.defaults.backend}`, resolveCommand(config.backends[config.defaults.backend]?.command), config.backends[config.defaults.backend]?.command ?? "missing"],
-    [`daemon`, await pingDaemon(), daemonUrl()],
-  ];
+  const backends = listBackendAvailability(config);
+  const defaultAgent = resolveAgent(config, config.defaults.agent);
+  const roleLines = Object.keys(config.roleDefaults)
+    .map((role) => role as keyof typeof config.roleDefaults)
+    .map((role) => {
+      const agentId = resolveAgentIdForRole(config, role);
+      const agent = resolveAgent(config, agentId);
+      return `${role} -> ${agent.id} (${agent.backend}, ${agent.model})`;
+    });
 
   console.log("Yes Chef - Doctor");
-  for (const [label, status, detail] of checks) {
-    console.log(`${status.padEnd(7)} ${label.padEnd(18)} ${detail}`);
+  console.log(`ok      config             ${config.project.name}`);
+  console.log(`ok      runtime            ${runtimePaths.runtimeRoot}`);
+  console.log(`ok      database           ${runtimePaths.dbPath}`);
+  console.log(`ok      sources            ${sources.map((source) => `${source.kind}:${source.path}`).join(" -> ")}`);
+  console.log(`ok      default-agent      ${defaultAgent.id} (${defaultAgent.backend}, ${defaultAgent.model})`);
+
+  for (const backend of backends) {
+    const status = backend.installed ? (backend.config.enabled === false ? "disabled" : "ok") : backend.config.enabled === false ? "disabled" : "missing";
+    console.log(`${status.padEnd(7)} backend:${backend.id.padEnd(10)} ${backend.config.command}`);
   }
-}
 
-function resolveCommand(command?: string): string {
-  if (!command) {
-    return "missing";
+  for (const roleLine of roleLines) {
+    console.log(`ok      role-default       ${roleLine}`);
   }
 
-  const escaped = command.replace(/'/g, `'\\''`);
-  const result = Bun.spawnSync({
-    cmd: ["bash", "-lc", `command -v '${escaped}' >/dev/null 2>&1`],
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  return result.exitCode === 0 ? "ok" : "missing";
+  console.log(`${(await pingDaemon()).padEnd(7)} daemon             ${daemonUrl()}`);
+  console.log(`ok      agents             ${listResolvedAgents(config).length} configured`);
 }
 
 async function pingDaemon(): Promise<string> {

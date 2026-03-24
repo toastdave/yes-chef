@@ -55,7 +55,7 @@ export async function prepMenu(options: {
       menu_id: bundle.menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { title: order.title, kind: order.kind },
+      payload: { title: order.title, kind: order.kind, agentId: order.agentId },
     });
 
     await options.bus.emit({
@@ -63,7 +63,7 @@ export async function prepMenu(options: {
       menu_id: bundle.menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { backend: order.backend },
+      payload: { backend: order.backend, model: order.model, agentId: order.agentId },
     });
   }
 
@@ -97,7 +97,7 @@ export async function fireMenu(options: {
       menu_id: menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { title: order.title },
+      payload: { title: order.title, agentId: order.agentId },
     });
 
     runs.push(

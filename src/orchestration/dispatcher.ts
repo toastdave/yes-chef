@@ -50,8 +50,9 @@ export async function dispatchOrder(options: {
     id: runId,
     orderId: options.order.id,
     role: options.order.role,
+    agentId: options.order.agentId,
     backend: options.order.backend,
-    model: options.config.roles[options.order.role].model,
+    model: options.order.model,
     command: "",
     status: "running",
     startedAt: now,
@@ -65,13 +66,14 @@ export async function dispatchOrder(options: {
 
   options.db.query(
     `INSERT INTO runs (
-      id, order_id, role, backend, model, command, status, started_at, ended_at, exit_code,
+      id, order_id, role, agent_id, backend, model, command, status, started_at, ended_at, exit_code,
       summary, artifact_ids_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     run.id,
     run.orderId,
     run.role,
+    run.agentId,
     run.backend,
     run.model,
     run.command,
@@ -91,7 +93,7 @@ export async function dispatchOrder(options: {
     order_id: options.order.id,
     run_id: run.id,
     role: options.order.role,
-    payload: { backend: options.order.backend },
+    payload: { backend: options.order.backend, agentId: options.order.agentId, model: options.order.model },
   });
 
   const adapterResult = await runCodexAdapter({

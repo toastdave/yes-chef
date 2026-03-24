@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 
+import { resolveAgent, resolveAgentIdForRole } from "../core/agents.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { writeJsonFile, writeTextFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
@@ -34,6 +35,8 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
   const menuId = createId("M");
   const orderId = createId("O");
   const courseId = createId("C");
+  const agentId = resolveAgentIdForRole(config, "line-cook");
+  const agent = resolveAgent(config, agentId);
 
   const menu: MenuRecord = {
     id: menuId,
@@ -69,9 +72,11 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
     title: `Implement ${goal}`,
     kind: "implement",
     role: "line-cook",
-    backend: config.defaults.backend,
+    agentId,
+    backend: agent.backend,
+    model: agent.model,
     profile: config.defaults.profile,
-    promptTemplate: config.roles["line-cook"].promptTemplate,
+    promptTemplate: agent.prompt,
     workspaceId: null,
     dependsOn: [],
     packs: menu.requiredPacks,
@@ -168,7 +173,7 @@ function renderMenuMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
     ...menu.courses.map((course) => `- ${course.title}: ${course.summary}`),
     "",
     "## Orders",
-    ...orders.map((order) => `- ${order.id} (${order.role}, ${order.kind}): ${order.title}`),
+    ...orders.map((order) => `- ${order.id} (${order.role}, ${order.agentId}, ${order.kind}): ${order.title}`),
     "",
     "## Validations",
     ...menu.validations.map((validation) => `- ${validation}`),
@@ -181,7 +186,7 @@ function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
     `# Plan: ${menu.title}`,
     "",
     ...orders.map(
-      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Backend: ${order.backend}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
+      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
     ),
     "",
   ].join("\n");

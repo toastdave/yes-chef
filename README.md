@@ -6,11 +6,21 @@ Yes Chef is a local-first coding-agent control plane built around a daemon plus 
 
 ```bash
 bun install
+bun run cli setup
 bun run daemon
 bun run cli prep "Build the invite flow"
 bun run cli status
 bun run cli doctor
 ```
+
+## Config precedence
+
+- Built-in Yes Chef defaults
+- Global config at `~/.config/yeschef/config.jsonc`
+- Optional override path from `YESCHEF_CONFIG`
+- Project config from the nearest `yeschef.config.jsonc`
+
+Built-in agents inherit the global default backend and model unless a project or agent override says otherwise.
 
 ## Layout
 

@@ -50,7 +50,9 @@ export interface OrderRecord {
   title: string;
   kind: OrderKind;
   role: RoleName;
+  agentId: string;
   backend: string;
+  model: string;
   profile: string;
   promptTemplate: string;
   workspaceId: string | null;
@@ -69,6 +71,7 @@ export interface RunRecord {
   id: string;
   orderId: string;
   role: RoleName;
+  agentId: string;
   backend: string;
   model: string;
   command: string;

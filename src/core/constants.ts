@@ -1,4 +1,9 @@
 export const CONFIG_FILE_NAME = "yeschef.config.jsonc";
+export const GLOBAL_CONFIG_DIR_NAME = "yeschef";
+export const GLOBAL_CONFIG_ENV_VAR = "YESCHEF_GLOBAL_CONFIG";
+export const CONFIG_OVERRIDE_ENV_VAR = "YESCHEF_CONFIG";
 export const DEFAULT_DAEMON_URL = "http://127.0.0.1:4242";
 export const DEFAULT_DAEMON_PORT = 4242;
 export const EVENT_LOG_FILE_NAME = "events.jsonl";
+export const CONFIG_SCHEMA_URL = "https://yeschef.ai/config.json";
+export const DEFAULT_OPENCODE_FREE_MODEL = "opencode/gpt-5-nano";

@@ -12,6 +12,7 @@ interface RunRow {
   id: string;
   order_id: string;
   role: string;
+  agent_id: string;
   backend: string;
   model: string;
   command: string;

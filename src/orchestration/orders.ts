@@ -9,7 +9,9 @@ interface OrderRow {
   title: string;
   kind: OrderRecord["kind"];
   role: OrderRecord["role"];
+  agent_id: string;
   backend: string;
+  model: string;
   profile: string;
   prompt_template: string;
   workspace_id: string | null;
@@ -27,17 +29,19 @@ interface OrderRow {
 export function insertOrder(db: Database, order: OrderRecord): void {
   db.query(
     `INSERT INTO orders (
-      id, menu_id, title, kind, role, backend, profile, prompt_template, workspace_id,
+      id, menu_id, title, kind, role, agent_id, backend, model, profile, prompt_template, workspace_id,
       depends_on_json, packs_json, skills_json, validations_required_json, retry_limit, status,
       priority, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     order.id,
     order.menuId,
     order.title,
     order.kind,
     order.role,
+    order.agentId,
     order.backend,
+    order.model,
     order.profile,
     order.promptTemplate,
     order.workspaceId,
@@ -91,7 +95,9 @@ function mapOrderRow(row: OrderRow): OrderRecord {
     title: row.title,
     kind: row.kind,
     role: row.role,
+    agentId: row.agent_id,
     backend: row.backend,
+    model: row.model,
     profile: row.profile,
     promptTemplate: row.prompt_template,
     workspaceId: row.workspace_id,

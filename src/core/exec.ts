@@ -101,3 +101,14 @@ export async function writeProcessOutput(filePath: string, contents: string): Pr
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, contents, "utf8");
 }
+
+export function commandExists(command: string): boolean {
+  const escaped = command.replace(/'/g, `'\\''`);
+  const result = Bun.spawnSync({
+    cmd: ["bash", "-lc", `command -v '${escaped}' >/dev/null 2>&1`],
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+
+  return result.exitCode === 0;
+}
