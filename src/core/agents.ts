@@ -61,6 +61,17 @@ export function resolveAgentIdForRole(config: YesChefConfig, role: RoleName): st
   return config.roleDefaults[role] ?? builtinRoleDefaults[role];
 }
 
+export function resolveAgentForRole(config: YesChefConfig, role: RoleName): ResolvedAgentConfig {
+  const agentId = resolveAgentIdForRole(config, role);
+  const agent = resolveAgent(config, agentId);
+
+  if (agent.role !== role) {
+    throw new Error(`Role ${role} is mapped to agent ${agentId}, but that agent declares role ${agent.role}`);
+  }
+
+  return agent;
+}
+
 export function resolveAgent(config: YesChefConfig, agentId: string): ResolvedAgentConfig {
   const builtin = builtinAgents[agentId];
   const configured = config.agents[agentId];

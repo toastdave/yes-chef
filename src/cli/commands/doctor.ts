@@ -1,4 +1,4 @@
-import { listResolvedAgents, resolveAgent, resolveAgentIdForRole } from "../../core/agents.ts";
+import { listResolvedAgents, resolveAgent, resolveAgentForRole } from "../../core/agents.ts";
 import { listBackendAvailability } from "../../core/backends.ts";
 import { loadConfigWithMeta } from "../../core/config.ts";
 import { ensureRuntimePaths } from "../../core/fs.ts";
@@ -15,8 +15,7 @@ export async function runDoctorCommand(): Promise<void> {
   const roleLines = Object.keys(config.roleDefaults)
     .map((role) => role as keyof typeof config.roleDefaults)
     .map((role) => {
-      const agentId = resolveAgentIdForRole(config, role);
-      const agent = resolveAgent(config, agentId);
+      const agent = resolveAgentForRole(config, role);
       const preference = agent.backendPreference === agent.backend ? agent.backend : `${agent.backendPreference} -> ${agent.backend}`;
       const delegate = agent.backendAgent ? `:${agent.backendAgent}` : "";
       return `${role} -> ${agent.id} (${preference}${delegate}, ${agent.model}, ${agent.mode})`;

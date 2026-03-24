@@ -14,6 +14,8 @@ import type { RoleName } from "./models.ts";
 export interface BackendConfig {
   command: string;
   args: string[];
+  managedArgs?: string[];
+  delegateArgs?: string[];
   enabled?: boolean;
   installHint?: string;
 }

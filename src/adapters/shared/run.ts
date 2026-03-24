@@ -33,14 +33,21 @@ export async function runCliAdapter(options: {
   const stdoutPath = join(paths.artifactsDir, `${options.runId}-stdout.log`);
   const stderrPath = join(paths.artifactsDir, `${options.runId}-stderr.log`);
   const promptPath = join(paths.promptsDir, `${options.runId}.md`);
-  const commandArgs = expandCommandArgs(backend.args, {
+  const argsTemplate = selectArgsTemplate(backend, options.order.mode);
+
+  if (options.order.mode === "delegate" && !options.order.backendAgent) {
+    throw new Error(`Agent ${options.order.agentId} is in delegate mode but does not define backendAgent`);
+  }
+
+  const commandArgs = expandCommandArgs(argsTemplate, {
     prompt,
     promptPath,
     model: options.order.model,
     backendAgent: options.order.backendAgent,
     agentId: options.order.agentId,
+    mode: options.order.mode,
   });
-  const shouldPipePrompt = !backend.args.some((arg) => arg.includes("{prompt}") || arg.includes("{prompt_file}"));
+  const shouldPipePrompt = !argsTemplate.some((arg) => arg.includes("{prompt}") || arg.includes("{prompt_file}"));
 
   await writeTextFile(promptPath, prompt);
 
@@ -83,7 +90,7 @@ export async function runCliAdapter(options: {
 
 function expandCommandArgs(
   args: string[],
-  values: { prompt: string; promptPath: string; model: string; backendAgent: string | null; agentId: string },
+  values: { prompt: string; promptPath: string; model: string; backendAgent: string | null; agentId: string; mode: string },
 ): string[] {
   return args
     .map((arg) =>
@@ -92,7 +99,16 @@ function expandCommandArgs(
         .replaceAll("{prompt_file}", values.promptPath)
         .replaceAll("{model}", values.model)
         .replaceAll("{backend_agent}", values.backendAgent ?? "")
-        .replaceAll("{agent}", values.agentId),
+        .replaceAll("{agent}", values.agentId)
+        .replaceAll("{mode}", values.mode),
     )
     .filter((arg) => arg.length > 0);
+}
+
+function selectArgsTemplate(backend: { args: string[]; managedArgs?: string[]; delegateArgs?: string[] }, mode: string): string[] {
+  if (mode === "delegate") {
+    return backend.delegateArgs ?? backend.args;
+  }
+
+  return backend.managedArgs ?? backend.args;
 }

@@ -4,6 +4,21 @@
     "name": "yes-chef",
     "baseBranch": "main"
   },
+  // Add project-specific custom agents here. They merge over global config.
+  // Example:
+  // "agents": {
+  //   "custom-cook": {
+  //     "role": "line-cook",
+  //     "backend": "auto",
+  //     "model": "gpt-5-codex",
+  //     "mode": "delegate",
+  //     "backendAgent": "build",
+  //     "prompt": "custom-line-cook"
+  //   }
+  // },
+  // "roleDefaults": {
+  //   "line-cook": "custom-cook"
+  // },
   "validations": {
     "typecheck": "bun run typecheck"
   },

@@ -1,5 +1,9 @@
 # PRD 005: Backend Selection and Adapter Delegation
 
+## Status
+
+Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, and delegate mode is represented in persisted state. Remaining work is backend-specific invocation polish and deeper native-agent integrations.
+
 ## Problem
 
 The current scaffold is effectively Codex-only at dispatch time. It cannot resolve the best available backend, route by model family, or safely delegate to backend-native agents without leaking backend-specific behavior into Yes Chef.
@@ -32,3 +36,4 @@ Introduce a shared adapter contract with explicit backend selection, model-famil
 - Yes Chef should persist the resolved agent, backend, model, and delegation mode on each order and run.
 - Native backend agent names should stay explicit adapter references so naming collisions do not affect Yes Chef agents.
 - Adapter behavior should remain resumable from stored DB state and artifacts.
+- Remaining work should focus on backend-specific managed versus delegate argument templates, native profile support where available, and better artifact/log introspection.

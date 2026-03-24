@@ -1,5 +1,9 @@
 # PRD 004: Config Layering and Agent Setup
 
+## Status
+
+Foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, and role-to-agent mapping now exist. Remaining work is mostly around richer authoring, validation, and polish.
+
 ## Problem
 
 The current scaffold only supports a single project-local config file and hardcoded role defaults. It does not provide a global config, merged precedence, a setup flow, or a configurable Yes Chef agent registry.
@@ -16,6 +20,7 @@ Add an OpenCode-style configuration system for Yes Chef with built-in agents, gl
 - Built-in Yes Chef agents (`chef`, `sous-chef`, `line-cook`, `expo`, `critic`) inherit the global default backend and model unless explicitly overridden.
 - Users can define or override any agent in config with fields like `role`, `backend`, `model`, `prompt`, `tools` or permissions, and optional backend-native bindings.
 - Project config overrides global agent definitions cleanly without replacing unrelated settings.
+- Agent definitions can now carry prompt, tools, permissions, mode, and optional backend-native bindings.
 
 ## Non-goals
 
@@ -29,3 +34,4 @@ Add an OpenCode-style configuration system for Yes Chef with built-in agents, gl
 - Favor JSONC first so config merging and validation stay predictable.
 - Treat Yes Chef agents as the stable user-facing abstraction and backend-native agents as adapter details.
 - `yeschef doctor` should explain both raw availability and effective resolved defaults.
+- Remaining follow-up work should focus on config validation, richer examples, and optional markdown-based agent authoring if still desired.

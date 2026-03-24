@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 
-import { resolveAgent, resolveAgentIdForRole } from "../core/agents.ts";
+import { resolveAgentForRole, resolveAgentIdForRole } from "../core/agents.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { writeJsonFile, writeTextFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
@@ -36,7 +36,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
   const orderId = createId("O");
   const courseId = createId("C");
   const agentId = resolveAgentIdForRole(config, "line-cook");
-  const agent = resolveAgent(config, agentId);
+  const agent = resolveAgentForRole(config, "line-cook");
 
   const menu: MenuRecord = {
     id: menuId,
