@@ -12,8 +12,12 @@ interface OrderRow {
   agent_id: string;
   backend: string;
   model: string;
+  mode: OrderRecord["mode"];
+  backend_agent: string | null;
   profile: string;
   prompt_template: string;
+  tools_json: string;
+  permissions_json: string;
   workspace_id: string | null;
   depends_on_json: string;
   packs_json: string;
@@ -29,10 +33,10 @@ interface OrderRow {
 export function insertOrder(db: Database, order: OrderRecord): void {
   db.query(
     `INSERT INTO orders (
-      id, menu_id, title, kind, role, agent_id, backend, model, profile, prompt_template, workspace_id,
-      depends_on_json, packs_json, skills_json, validations_required_json, retry_limit, status,
-      priority, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id, menu_id, title, kind, role, agent_id, backend, model, mode, backend_agent, profile,
+      prompt_template, tools_json, permissions_json, workspace_id, depends_on_json, packs_json,
+      skills_json, validations_required_json, retry_limit, status, priority, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     order.id,
     order.menuId,
@@ -42,8 +46,12 @@ export function insertOrder(db: Database, order: OrderRecord): void {
     order.agentId,
     order.backend,
     order.model,
+    order.mode,
+    order.backendAgent,
     order.profile,
     order.promptTemplate,
+    JSON.stringify(order.tools),
+    JSON.stringify(order.permissions),
     order.workspaceId,
     JSON.stringify(order.dependsOn),
     JSON.stringify(order.packs),
@@ -98,8 +106,12 @@ function mapOrderRow(row: OrderRow): OrderRecord {
     agentId: row.agent_id,
     backend: row.backend,
     model: row.model,
+    mode: row.mode,
+    backendAgent: row.backend_agent,
     profile: row.profile,
     promptTemplate: row.prompt_template,
+    tools: parseJsonValue<Record<string, unknown>>(row.tools_json, {}),
+    permissions: parseJsonValue<Record<string, unknown>>(row.permissions_json, {}),
     workspaceId: row.workspace_id,
     dependsOn: parseJsonValue<string[]>(row.depends_on_json, []),
     packs: parseJsonValue<string[]>(row.packs_json, []),

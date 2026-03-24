@@ -55,7 +55,7 @@ export async function prepMenu(options: {
       menu_id: bundle.menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { title: order.title, kind: order.kind, agentId: order.agentId },
+      payload: { title: order.title, kind: order.kind, agentId: order.agentId, mode: order.mode },
     });
 
     await options.bus.emit({
@@ -63,7 +63,7 @@ export async function prepMenu(options: {
       menu_id: bundle.menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { backend: order.backend, model: order.model, agentId: order.agentId },
+      payload: { backend: order.backend, model: order.model, agentId: order.agentId, backendAgent: order.backendAgent },
     });
   }
 

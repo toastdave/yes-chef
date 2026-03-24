@@ -1,10 +1,14 @@
 import type { Database } from "bun:sqlite";
 
+import { runClaudeAdapter } from "../adapters/claude/run.ts";
+import { runCodexAdapter } from "../adapters/codex/run.ts";
+import { runGeminiAdapter } from "../adapters/gemini/run.ts";
+import { runOpenCodeAdapter } from "../adapters/opencode/run.ts";
+import type { AdapterRunResult } from "../adapters/shared/run.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
-import type { ArtifactRecord, MenuRecord, OrderRecord, RunRecord } from "../core/models.ts";
+import type { ArtifactRecord, MenuRecord, OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
-import { runCodexAdapter } from "../adapters/codex/run.ts";
 import { attachWorkspaceToOrder, updateOrderStatus } from "./orders.ts";
 import { ensureWorkspace } from "../workspaces/create.ts";
 import { releaseWorkspace } from "../workspaces/cleanup.ts";
@@ -53,6 +57,8 @@ export async function dispatchOrder(options: {
     agentId: options.order.agentId,
     backend: options.order.backend,
     model: options.order.model,
+    mode: options.order.mode,
+    backendAgent: options.order.backendAgent,
     command: "",
     status: "running",
     startedAt: now,
@@ -66,9 +72,9 @@ export async function dispatchOrder(options: {
 
   options.db.query(
     `INSERT INTO runs (
-      id, order_id, role, agent_id, backend, model, command, status, started_at, ended_at, exit_code,
-      summary, artifact_ids_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id, order_id, role, agent_id, backend, model, mode, backend_agent, command, status, started_at,
+      ended_at, exit_code, summary, artifact_ids_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     run.id,
     run.orderId,
@@ -76,6 +82,8 @@ export async function dispatchOrder(options: {
     run.agentId,
     run.backend,
     run.model,
+    run.mode,
+    run.backendAgent,
     run.command,
     run.status,
     run.startedAt,
@@ -93,10 +101,16 @@ export async function dispatchOrder(options: {
     order_id: options.order.id,
     run_id: run.id,
     role: options.order.role,
-    payload: { backend: options.order.backend, agentId: options.order.agentId, model: options.order.model },
+    payload: {
+      backend: options.order.backend,
+      agentId: options.order.agentId,
+      model: options.order.model,
+      mode: options.order.mode,
+      backendAgent: options.order.backendAgent,
+    },
   });
 
-  const adapterResult = await runCodexAdapter({
+  const adapterResult = await dispatchToBackend({
     root: options.root,
     config: options.config,
     menu: options.menu,
@@ -168,6 +182,29 @@ export async function dispatchOrder(options: {
     artifactIds: artifacts.map((artifact) => artifact.id),
     updatedAt: finishedAt,
   };
+}
+
+async function dispatchToBackend(options: {
+  root: string;
+  config: YesChefConfig;
+  menu: MenuRecord;
+  order: OrderRecord;
+  workspace: WorkspaceRecord;
+  runId: string;
+  bus: EventBus;
+}): Promise<AdapterRunResult> {
+  switch (options.order.backend) {
+    case "codex":
+      return runCodexAdapter(options);
+    case "opencode":
+      return runOpenCodeAdapter(options);
+    case "claude":
+      return runClaudeAdapter(options);
+    case "gemini":
+      return runGeminiAdapter(options);
+    default:
+      return runOpenCodeAdapter(options);
+  }
 }
 
 function createArtifactRecord(runId: string, type: ArtifactRecord["type"], path: string): ArtifactRecord {

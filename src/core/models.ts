@@ -53,8 +53,12 @@ export interface OrderRecord {
   agentId: string;
   backend: string;
   model: string;
+  mode: "managed" | "delegate";
+  backendAgent: string | null;
   profile: string;
   promptTemplate: string;
+  tools: Record<string, unknown>;
+  permissions: Record<string, unknown>;
   workspaceId: string | null;
   dependsOn: string[];
   packs: string[];
@@ -74,6 +78,8 @@ export interface RunRecord {
   agentId: string;
   backend: string;
   model: string;
+  mode: "managed" | "delegate";
+  backendAgent: string | null;
   command: string;
   status: RunStatus;
   startedAt: string;

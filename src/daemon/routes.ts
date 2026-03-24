@@ -15,6 +15,8 @@ interface RunRow {
   agent_id: string;
   backend: string;
   model: string;
+  mode: string;
+  backend_agent: string | null;
   command: string;
   status: string;
   started_at: string;

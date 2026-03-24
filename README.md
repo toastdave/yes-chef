@@ -21,6 +21,7 @@ bun run cli doctor
 - Project config from the nearest `yeschef.config.jsonc`
 
 Built-in agents inherit the global default backend and model unless a project or agent override says otherwise.
+When the effective backend is `auto`, Yes Chef picks the best installed CLI for the model family: GPT prefers `codex` then `opencode`, Anthropic uses `claude`, Gemini prefers `gemini` then `opencode`, and generic models fall back to `opencode`.
 
 ## Layout
 

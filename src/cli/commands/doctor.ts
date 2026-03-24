@@ -17,7 +17,9 @@ export async function runDoctorCommand(): Promise<void> {
     .map((role) => {
       const agentId = resolveAgentIdForRole(config, role);
       const agent = resolveAgent(config, agentId);
-      return `${role} -> ${agent.id} (${agent.backend}, ${agent.model})`;
+      const preference = agent.backendPreference === agent.backend ? agent.backend : `${agent.backendPreference} -> ${agent.backend}`;
+      const delegate = agent.backendAgent ? `:${agent.backendAgent}` : "";
+      return `${role} -> ${agent.id} (${preference}${delegate}, ${agent.model}, ${agent.mode})`;
     });
 
   console.log("Yes Chef - Doctor");
@@ -25,7 +27,9 @@ export async function runDoctorCommand(): Promise<void> {
   console.log(`ok      runtime            ${runtimePaths.runtimeRoot}`);
   console.log(`ok      database           ${runtimePaths.dbPath}`);
   console.log(`ok      sources            ${sources.map((source) => `${source.kind}:${source.path}`).join(" -> ")}`);
-  console.log(`ok      default-agent      ${defaultAgent.id} (${defaultAgent.backend}, ${defaultAgent.model})`);
+  const defaultPreference =
+    defaultAgent.backendPreference === defaultAgent.backend ? defaultAgent.backend : `${defaultAgent.backendPreference} -> ${defaultAgent.backend}`;
+  console.log(`ok      default-agent      ${defaultAgent.id} (${defaultPreference}, ${defaultAgent.model}, ${defaultAgent.mode})`);
 
   for (const backend of backends) {
     const status = backend.installed ? (backend.config.enabled === false ? "disabled" : "ok") : backend.config.enabled === false ? "disabled" : "missing";

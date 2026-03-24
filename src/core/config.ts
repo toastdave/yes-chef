@@ -121,7 +121,7 @@ function createDefaultConfig(root: string): YesChefConfig {
       baseBranch: "main",
     },
     defaults: {
-      backend: "codex",
+      backend: "auto",
       model: "gpt-5-codex",
       mode: "safe",
       profile: "default",

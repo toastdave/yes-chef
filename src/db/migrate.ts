@@ -7,7 +7,13 @@ import { schemaStatements } from "./schema.ts";
 const additiveColumns: Array<{ table: string; column: string; definition: string }> = [
   { table: "orders", column: "agent_id", definition: "TEXT NOT NULL DEFAULT 'line-cook'" },
   { table: "orders", column: "model", definition: "TEXT NOT NULL DEFAULT 'gpt-5-codex'" },
+  { table: "orders", column: "mode", definition: "TEXT NOT NULL DEFAULT 'managed'" },
+  { table: "orders", column: "backend_agent", definition: "TEXT" },
+  { table: "orders", column: "tools_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
+  { table: "orders", column: "permissions_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
   { table: "runs", column: "agent_id", definition: "TEXT NOT NULL DEFAULT 'line-cook'" },
+  { table: "runs", column: "mode", definition: "TEXT NOT NULL DEFAULT 'managed'" },
+  { table: "runs", column: "backend_agent", definition: "TEXT" },
 ];
 
 export async function migrateDatabase(root = process.cwd()): Promise<void> {

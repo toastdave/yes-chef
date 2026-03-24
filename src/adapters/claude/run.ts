@@ -3,7 +3,7 @@ import type { MenuRecord, OrderRecord, WorkspaceRecord } from "../../core/models
 import type { EventBus } from "../../events/emit.ts";
 import { runCliAdapter, type AdapterRunResult } from "../shared/run.ts";
 
-export async function runCodexAdapter(options: {
+export async function runClaudeAdapter(options: {
   root: string;
   config: YesChefConfig;
   menu: MenuRecord;
@@ -14,6 +14,6 @@ export async function runCodexAdapter(options: {
 }): Promise<AdapterRunResult> {
   return runCliAdapter({
     ...options,
-    adapterName: "codex",
+    adapterName: "claude",
   });
 }

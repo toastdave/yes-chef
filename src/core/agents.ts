@@ -1,3 +1,4 @@
+import { resolveBackendForModel } from "./backends.ts";
 import type { AgentConfig, YesChefConfig } from "./config.ts";
 import type { RoleName } from "./models.ts";
 
@@ -42,11 +43,18 @@ export const builtinAgents: Record<string, AgentConfig> = {
   },
 };
 
-export interface ResolvedAgentConfig extends AgentConfig {
+export interface ResolvedAgentConfig extends Omit<AgentConfig, "backend" | "model" | "prompt" | "mode" | "backendAgent" | "tools" | "permissions"> {
   id: string;
   backend: string;
+  backendPreference: string;
+  backendReason: string;
   model: string;
+  modelFamily: string;
   prompt: string;
+  mode: "managed" | "delegate";
+  backendAgent: string | null;
+  tools: Record<string, unknown>;
+  permissions: Record<string, unknown>;
 }
 
 export function resolveAgentIdForRole(config: YesChefConfig, role: RoleName): string {
@@ -70,12 +78,23 @@ export function resolveAgent(config: YesChefConfig, agentId: string): ResolvedAg
     throw new Error(`Agent ${agentId} is missing a role`);
   }
 
+  const model = inheritedValue(merged.model, config.defaults.model);
+  const backendPreference = inheritedValue(merged.backend, config.defaults.backend);
+  const backendResolution = resolveBackendForModel(config, backendPreference, model);
+
   return {
     ...merged,
     id: agentId,
-    backend: inheritedValue(merged.backend, config.defaults.backend),
-    model: inheritedValue(merged.model, config.defaults.model),
+    backend: backendResolution.backend,
+    backendPreference,
+    backendReason: backendResolution.reason,
+    model,
+    modelFamily: backendResolution.modelFamily,
     prompt: inheritedValue(merged.prompt, merged.role),
+    mode: merged.mode ?? "managed",
+    backendAgent: merged.backendAgent ?? null,
+    tools: merged.tools ?? {},
+    permissions: merged.permissions ?? {},
   };
 }
 

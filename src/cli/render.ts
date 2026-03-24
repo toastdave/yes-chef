@@ -16,7 +16,10 @@ export function renderStatusBoard(input: {
     `Menu: ${activeMenu.id}`,
     `Objective: ${activeMenu.objective}`,
     "",
-    ...input.orders.map((order) => `[ ${labelForOrder(order)} ] ${order.title} (${order.agentId} -> ${order.backend})`),
+    ...input.orders.map(
+      (order) =>
+        `[ ${labelForOrder(order)} ] ${order.title} (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode})`,
+    ),
     input.workspaces.length > 0 ? "" : null,
     ...input.workspaces.map((workspace) => `workspace ${workspace.id}: ${workspace.status} -> ${workspace.path}`),
   ]
