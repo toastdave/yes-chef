@@ -13,6 +13,7 @@ Add reliable worktree creation, locking, cleanup, and retry scheduling so failed
 - Each write-capable order can run in an isolated worktree.
 - Validation failures create repair orders instead of rerunning the full menu.
 - Retry payloads include failing outputs, changed files, and acceptance criteria.
+- Repair orders preserve the resolved Yes Chef agent, backend, and model context from the failed run.
 
 ## Non-goals
 
@@ -24,3 +25,4 @@ Add reliable worktree creation, locking, cleanup, and retry scheduling so failed
 
 - Keep write execution sequential by default.
 - Persist worktree lifecycle and retry lineage in SQLite.
+- Keep worktree behavior independent from backend-specific workspace features.

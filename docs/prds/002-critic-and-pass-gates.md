@@ -13,8 +13,13 @@ Introduce a deterministic pass pipeline that combines validation gates, optional
 - `yeschef pass` can require Expo and Critic stages.
 - Menus end in `completed`, `blocked`, or `approval-required` with clear reasons.
 - Review outputs become first-class artifacts and events.
+- Expo and Critic execution should resolve through the configured Yes Chef agents, not hardcoded backends.
 
 ## Non-goals
 
 - Hosted code review dashboards
 - GitHub merge automation in the first cut
+
+## Notes
+
+- Pass flow should respect agent-level permissions and backend overrides from the merged config.
