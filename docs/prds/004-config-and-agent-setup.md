@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, and role-to-agent mapping now exist. Remaining work is mostly around richer authoring, validation, and polish.
+Foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, and role-to-agent mapping now exist. Remaining work is richer authoring and validation plus new first-class concepts for policies, skills, packs, routing, and project knowledge.
 
 ## Problem
 
@@ -10,7 +10,7 @@ The current scaffold only supports a single project-local config file and hardco
 
 ## Goal
 
-Add an OpenCode-style configuration system for Yes Chef with built-in agents, global and project overrides, and a `yeschef setup` command that prepares a machine for first use.
+Add an OpenCode-style configuration system for Yes Chef with built-in agents, global and project overrides, and a `yeschef setup` command that prepares a machine for first use while leaving room for policies, skills, packs, routing, and project-scoped knowledge overlays.
 
 ## Outcomes
 
@@ -21,6 +21,9 @@ Add an OpenCode-style configuration system for Yes Chef with built-in agents, gl
 - Users can define or override any agent in config with fields like `role`, `backend`, `model`, `prompt`, `tools` or permissions, and optional backend-native bindings.
 - Project config overrides global agent definitions cleanly without replacing unrelated settings.
 - Agent definitions can now carry prompt, tools, permissions, mode, and optional backend-native bindings.
+- Config can define global policies such as validation-before-completion, worktree requirements, and commit conventions separately from agent prompts.
+- Config can declare skills, packs, routing hints, and project knowledge sources without forcing those concerns into every agent definition.
+- Project config can supply architecture maps, repo commands, dangerous paths, and acceptance criteria as project-scoped overlays rather than global defaults.
 
 ## Non-goals
 
@@ -34,4 +37,5 @@ Add an OpenCode-style configuration system for Yes Chef with built-in agents, gl
 - Favor JSONC first so config merging and validation stay predictable.
 - Treat Yes Chef agents as the stable user-facing abstraction and backend-native agents as adapter details.
 - `yeschef doctor` should explain both raw availability and effective resolved defaults.
-- Remaining follow-up work should focus on config validation, richer examples, and optional markdown-based agent authoring if still desired.
+- Keep role definitions small and stable; most specialization should live in skills, packs, and project overlays.
+- Remaining follow-up work should focus on config validation, richer examples, and optional markdown-based authoring for prompts or skills if still desired.

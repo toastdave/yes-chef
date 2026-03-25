@@ -14,6 +14,7 @@ Add an optional full-screen terminal experience on top of the stable daemon API 
 - Clear kitchen phases mapped from raw event types.
 - Better visibility into active runs, blocked orders, and artifacts.
 - Board views can show resolved agent, backend, and validation state without exposing backend-native implementation details by default.
+- Board views can explain selected skills, packs, routing reasons, and knowledge sources for each order when operators need to debug behavior.
 
 ## Candidate tools
 
@@ -22,3 +23,4 @@ Add an optional full-screen terminal experience on top of the stable daemon API 
 ## Notes
 
 - Build the service board on top of the stable daemon API and merged config model rather than a backend-specific TUI.
+- Treat routing and retrieval explainability as first-class UI concerns, not debug-only afterthoughts.

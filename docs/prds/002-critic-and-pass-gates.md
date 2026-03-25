@@ -14,6 +14,8 @@ Introduce a deterministic pass pipeline that combines validation gates, optional
 - Menus end in `completed`, `blocked`, or `approval-required` with clear reasons.
 - Review outputs become first-class artifacts and events.
 - Expo and Critic execution should resolve through the configured Yes Chef agents, not hardcoded backends.
+- Validation policies can require browser verification for UI work, stronger review for risky domains, and conventional-commit readiness checks before completion.
+- Completion criteria should be explicit and machine-checkable so builder behavior can be enforced by Expo instead of buried in prompts.
 
 ## Non-goals
 
@@ -23,3 +25,5 @@ Introduce a deterministic pass pipeline that combines validation gates, optional
 ## Notes
 
 - Pass flow should respect agent-level permissions and backend overrides from the merged config.
+- Browser-based validation should be attached to Expo or a future tester role, not enabled for every write-capable agent by default.
+- Critic should review architecture fit, risky diffs, and policy compliance separately from shell validations.

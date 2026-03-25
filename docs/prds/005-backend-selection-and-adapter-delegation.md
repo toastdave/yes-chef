@@ -2,7 +2,7 @@
 
 ## Status
 
-Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, and delegate mode is represented in persisted state. Remaining work is backend-specific invocation polish and deeper native-agent integrations.
+Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, and delegate mode is represented in persisted state. Remaining work is backend-specific invocation polish, stronger capability contracts, and deeper native-agent integrations.
 
 ## Problem
 
@@ -10,7 +10,7 @@ The current scaffold is effectively Codex-only at dispatch time. It cannot resol
 
 ## Goal
 
-Introduce a shared adapter contract with explicit backend selection, model-family fallback rules, and optional delegation to native backend agents while keeping Yes Chef in control of orchestration, state, and events.
+Introduce a shared adapter contract with explicit backend selection, model-family fallback rules, and optional delegation to native backend agents while keeping Yes Chef in control of orchestration, state, events, and policy.
 
 ## Outcomes
 
@@ -24,6 +24,8 @@ Introduce a shared adapter contract with explicit backend selection, model-famil
   - Gemini models prefer `gemini`, then `opencode`
   - Unknown or generic cases fall back to `opencode`
 - Pack resolution hooks can be passed into adapters without requiring a full marketplace.
+- Adapter contracts describe tool surfaces, browser support, patching/edit behavior, and delegation constraints so routing can choose a backend with intent instead of model name alone.
+- OpenCode should remain a first-class managed backend for direct execution even when other CLIs are available for delegated specialist runs.
 
 ## Non-goals
 
@@ -36,4 +38,5 @@ Introduce a shared adapter contract with explicit backend selection, model-famil
 - Yes Chef should persist the resolved agent, backend, model, and delegation mode on each order and run.
 - Native backend agent names should stay explicit adapter references so naming collisions do not affect Yes Chef agents.
 - Adapter behavior should remain resumable from stored DB state and artifacts.
-- Remaining work should focus on backend-specific managed versus delegate argument templates, native profile support where available, and better artifact/log introspection.
+- Backend-native capabilities should stay behind the adapter boundary; menus, orders, reviews, and knowledge retrieval should continue to speak in Yes Chef concepts.
+- Remaining work should focus on backend-specific managed versus delegate argument templates, native profile support where available, better artifact/log introspection, and capability reporting for routing.
