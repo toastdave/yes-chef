@@ -48,6 +48,19 @@ export interface ModeConfig {
   requireBrowserForUi: boolean;
 }
 
+export interface PoliciesConfig {
+  worktrees: {
+    mode: "off" | "auto" | "required";
+    cleanup: "keep" | "delete";
+    keepFailed: boolean;
+  };
+  completion: {
+    requireValidations: boolean;
+    conventionalCommits: boolean;
+  };
+  riskyPaths: string[];
+}
+
 export interface YesChefConfig {
   $schema?: string;
   project: {
@@ -65,6 +78,7 @@ export interface YesChefConfig {
   agents: Record<string, AgentConfig>;
   roleDefaults: Record<RoleName, string>;
   modes: Record<string, ModeConfig>;
+  policies: PoliciesConfig;
   validations: Record<string, string>;
   packs: Record<string, { enabled: boolean }>;
   ui: {
@@ -166,9 +180,21 @@ function createDefaultConfig(root: string): YesChefConfig {
     modes: {
       safe: { maxRetries: 2, requireReview: true, requireBrowserForUi: false },
     },
+    policies: {
+      worktrees: {
+        mode: "auto",
+        cleanup: "delete",
+        keepFailed: true,
+      },
+      completion: {
+        requireValidations: true,
+        conventionalCommits: false,
+      },
+      riskyPaths: [],
+    },
     validations: {
       typecheck: "bun run typecheck",
-    },
+      },
     packs: {
       browser: { enabled: false },
     },

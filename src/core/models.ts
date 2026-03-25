@@ -5,6 +5,8 @@ export type OrderKind = "prep" | "implement" | "validate" | "review" | "repair" 
 export type OrderStatus = "pending" | "queued" | "running" | "completed" | "failed" | "blocked";
 export type RunStatus = "running" | "completed" | "failed";
 export type WorkspaceStatus = "attached" | "ready" | "locked" | "released";
+export type WorkspaceStrategy = "in-place" | "worktree";
+export type WorkspaceCleanupStatus = "kept" | "removed";
 export type ValidationStatus = "pending" | "running" | "passed" | "failed";
 export type ArtifactType =
   | "stdout_log"
@@ -55,6 +57,12 @@ export interface OrderRecord {
   model: string;
   mode: "managed" | "delegate";
   backendAgent: string | null;
+  repairForOrderId: string | null;
+  sourceRunId: string | null;
+  retryCount: number;
+  failureContext: Record<string, unknown>;
+  isolationStrategy: WorkspaceStrategy;
+  isolationReason: string;
   profile: string;
   promptTemplate: string;
   tools: Record<string, unknown>;
@@ -97,6 +105,10 @@ export interface WorkspaceRecord {
   path: string;
   branchName: string;
   baseBranch: string;
+  baseRevision: string;
+  strategy: WorkspaceStrategy;
+  cleanupStatus: WorkspaceCleanupStatus;
+  isolationReason: string;
   locked: boolean;
   status: WorkspaceStatus;
   createdAt: string;

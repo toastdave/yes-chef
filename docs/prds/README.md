@@ -17,7 +17,7 @@ These PRDs capture the planned next layers of the local-first Yes Chef runtime.
 
 ## Planning notes
 
-- Config layering and multi-adapter routing now exist in the scaffold, so the next implementation phase should focus on worktree isolation, scoped repair orders, stronger pass/review flow, and a first-class knowledge layer.
+- Config layering and multi-adapter routing now exist in the scaffold, and worktree plus retry foundations are underway, so the next implementation phase should focus on finishing scoped repair flow, stronger pass/review flow, and a first-class knowledge layer.
 - Yes Chef should remain the orchestration and policy plane; backend CLIs such as OpenCode should stay interchangeable execution engines.
 - Skills, project knowledge, memory, and policy should be modeled as separate concepts so retrieval and validation remain predictable.
 - Backend-native delegation should keep evolving behind the stable Yes Chef agent model rather than leaking harness-specific concepts into menus or status views.

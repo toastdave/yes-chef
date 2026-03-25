@@ -7,6 +7,7 @@ import { writeJsonFile, writeTextFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
 import type { CourseRecord, MenuRecord, OrderRecord } from "../core/models.ts";
 import { parseJsonValue } from "../core/models.ts";
+import { resolveWorkspacePlan } from "../workspaces/create.ts";
 
 interface MenuRow {
   id: string;
@@ -37,6 +38,38 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
   const courseId = createId("C");
   const agentId = resolveAgentIdForRole(config, "line-cook");
   const agent = resolveAgentForRole(config, "line-cook");
+  const workspacePlan = resolveWorkspacePlan(config, {
+    id: orderId,
+    menuId,
+    title: `Implement ${goal}`,
+    kind: "implement",
+    role: "line-cook",
+    agentId,
+    backend: agent.backend,
+    model: agent.model,
+    mode: agent.mode,
+    backendAgent: agent.backendAgent,
+    repairForOrderId: null,
+    sourceRunId: null,
+    retryCount: 0,
+    failureContext: {},
+    isolationStrategy: "in-place",
+    isolationReason: "menu-prep default",
+    profile: config.defaults.profile,
+    promptTemplate: agent.prompt,
+    tools: agent.tools,
+    permissions: agent.permissions,
+    workspaceId: null,
+    dependsOn: [],
+    packs: [],
+    skills: [],
+    validationsRequired: [],
+    retryLimit: config.modes[config.defaults.mode]?.maxRetries ?? 0,
+    status: "queued",
+    priority: 1,
+    createdAt: now,
+    updatedAt: now,
+  });
 
   const menu: MenuRecord = {
     id: menuId,
@@ -77,6 +110,12 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
     model: agent.model,
     mode: agent.mode,
     backendAgent: agent.backendAgent,
+    repairForOrderId: null,
+    sourceRunId: null,
+    retryCount: 0,
+    failureContext: {},
+    isolationStrategy: workspacePlan.strategy,
+    isolationReason: workspacePlan.reason,
     profile: config.defaults.profile,
     promptTemplate: agent.prompt,
     tools: agent.tools,
@@ -132,6 +171,21 @@ export function listMenus(db: Database): MenuRecord[] {
 
 export function updateMenuStatus(db: Database, menuId: string, status: MenuRecord["status"]): void {
   db.query(`UPDATE menus SET status = ?, updated_at = ? WHERE id = ?`).run(status, new Date().toISOString(), menuId);
+}
+
+export function appendOrderToMenu(db: Database, menuId: string, orderId: string): void {
+  const menu = getMenuById(db, menuId);
+
+  if (!menu) {
+    return;
+  }
+
+  const orders = [...menu.orders, orderId];
+  db.query(`UPDATE menus SET orders_json = ?, updated_at = ? WHERE id = ?`).run(
+    JSON.stringify(orders),
+    new Date().toISOString(),
+    menuId,
+  );
 }
 
 export async function persistMenuArtifacts(root: string, bundle: MenuBundle): Promise<void> {
@@ -190,7 +244,7 @@ function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
     `# Plan: ${menu.title}`,
     "",
     ...orders.map(
-      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
+      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Isolation: ${order.isolationStrategy} (${order.isolationReason})\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
     ),
     "",
   ].join("\n");

@@ -55,7 +55,14 @@ export async function prepMenu(options: {
       menu_id: bundle.menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { title: order.title, kind: order.kind, agentId: order.agentId, mode: order.mode },
+      payload: {
+        title: order.title,
+        kind: order.kind,
+        agentId: order.agentId,
+        mode: order.mode,
+        retryCount: order.retryCount,
+        isolationStrategy: order.isolationStrategy,
+      },
     });
 
     await options.bus.emit({
@@ -89,27 +96,33 @@ export async function fireMenu(options: {
   updateMenuStatus(options.db, menu.id, "running");
 
   const runs: RunRecord[] = [];
-  const runnableOrders = getNextRunnableOrders(options.db, menu.id);
+  while (true) {
+    const runnableOrders = getNextRunnableOrders(options.db, menu.id);
 
-  for (const order of runnableOrders) {
-    await options.bus.emit({
-      type: "order.runnable",
-      menu_id: menu.id,
-      order_id: order.id,
-      role: order.role,
-      payload: { title: order.title, agentId: order.agentId },
-    });
+    if (runnableOrders.length === 0) {
+      break;
+    }
 
-    runs.push(
-      await dispatchOrder({
-        db: options.db,
-        root: options.root,
-        config: options.config,
-        bus: options.bus,
-        menu,
-        order,
-      }),
-    );
+    for (const order of runnableOrders) {
+      await options.bus.emit({
+        type: "order.runnable",
+        menu_id: menu.id,
+        order_id: order.id,
+        role: order.role,
+        payload: { title: order.title, agentId: order.agentId, retryCount: order.retryCount },
+      });
+
+      runs.push(
+        await dispatchOrder({
+          db: options.db,
+          root: options.root,
+          config: options.config,
+          bus: options.bus,
+          menu,
+          order,
+        }),
+      );
+    }
   }
 
   const status = reconcileMenuStatus(options.db, menu.id);
@@ -151,7 +164,8 @@ export async function passMenu(options: {
     menu,
   });
 
-  const allPassed = validations.every((validation) => validation.status === "passed");
+  const validationRequired = options.config.policies.completion.requireValidations;
+  const allPassed = validationRequired ? validations.every((validation) => validation.status === "passed") : true;
   const orders = listOrdersByMenu(options.db, menu.id);
   const ordersCompleted = orders.length > 0 && orders.every((order) => order.status === "completed");
   const mode = options.config.modes[options.config.defaults.mode];
@@ -163,7 +177,7 @@ export async function passMenu(options: {
       type: "approval.required",
       menu_id: menu.id,
       role: "chef",
-      payload: { reason: "Mode requires review before final merge." },
+      payload: { reason: "Mode requires review before final merge.", conventionalCommits: options.config.policies.completion.conventionalCommits },
     });
   }
 

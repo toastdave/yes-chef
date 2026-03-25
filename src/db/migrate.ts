@@ -9,11 +9,21 @@ const additiveColumns: Array<{ table: string; column: string; definition: string
   { table: "orders", column: "model", definition: "TEXT NOT NULL DEFAULT 'gpt-5-codex'" },
   { table: "orders", column: "mode", definition: "TEXT NOT NULL DEFAULT 'managed'" },
   { table: "orders", column: "backend_agent", definition: "TEXT" },
+  { table: "orders", column: "repair_for_order_id", definition: "TEXT" },
+  { table: "orders", column: "source_run_id", definition: "TEXT" },
+  { table: "orders", column: "retry_count", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "orders", column: "failure_context_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
+  { table: "orders", column: "isolation_strategy", definition: "TEXT NOT NULL DEFAULT 'in-place'" },
+  { table: "orders", column: "isolation_reason", definition: "TEXT NOT NULL DEFAULT ''" },
   { table: "orders", column: "tools_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
   { table: "orders", column: "permissions_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
   { table: "runs", column: "agent_id", definition: "TEXT NOT NULL DEFAULT 'line-cook'" },
   { table: "runs", column: "mode", definition: "TEXT NOT NULL DEFAULT 'managed'" },
   { table: "runs", column: "backend_agent", definition: "TEXT" },
+  { table: "workspaces", column: "base_revision", definition: "TEXT NOT NULL DEFAULT ''" },
+  { table: "workspaces", column: "strategy", definition: "TEXT NOT NULL DEFAULT 'in-place'" },
+  { table: "workspaces", column: "cleanup_status", definition: "TEXT NOT NULL DEFAULT 'kept'" },
+  { table: "workspaces", column: "isolation_reason", definition: "TEXT NOT NULL DEFAULT ''" },
 ];
 
 export async function migrateDatabase(root = process.cwd()): Promise<void> {

@@ -23,6 +23,16 @@ bun run cli doctor
 Built-in agents inherit the global default backend and model unless a project or agent override says otherwise.
 When the effective backend is `auto`, Yes Chef picks the best installed CLI for the model family: GPT prefers `codex` then `opencode`, Anthropic uses `claude`, Gemini prefers `gemini` then `opencode`, and generic models fall back to `opencode`.
 
+## Policies
+
+The scaffold now supports minimal policy controls in config.
+
+- `policies.worktrees.mode`: `off`, `auto`, or `required`
+- `policies.worktrees.cleanup`: keep or delete successful isolated worktrees
+- `policies.worktrees.keepFailed`: keep failed isolated worktrees for inspection
+- `policies.completion.requireValidations`: require Expo validations before completion
+- `policies.completion.conventionalCommits`: reserve a place for conventional-commit gating in later pass flows
+
 ## Custom agents
 
 Project and global config can define custom agents and map them to roles.

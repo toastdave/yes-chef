@@ -8,6 +8,10 @@ interface WorkspaceRow {
   path: string;
   branch_name: string;
   base_branch: string;
+  base_revision: string;
+  strategy: WorkspaceRecord["strategy"];
+  cleanup_status: WorkspaceRecord["cleanupStatus"];
+  isolation_reason: string;
   locked: number;
   status: WorkspaceRecord["status"];
   created_at: string;
@@ -22,6 +26,10 @@ export function listWorkspaceRecords(db: Database): WorkspaceRecord[] {
     path: row.path,
     branchName: row.branch_name,
     baseBranch: row.base_branch,
+    baseRevision: row.base_revision,
+    strategy: row.strategy,
+    cleanupStatus: row.cleanup_status,
+    isolationReason: row.isolation_reason,
     locked: row.locked === 1,
     status: row.status,
     createdAt: row.created_at,

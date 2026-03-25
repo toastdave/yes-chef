@@ -9,6 +9,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import type { ArtifactRecord, MenuRecord, OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
+import { scheduleRepairOrder } from "./retry.ts";
 import { attachWorkspaceToOrder, updateOrderStatus } from "./orders.ts";
 import { ensureWorkspace } from "../workspaces/create.ts";
 import { releaseWorkspace } from "../workspaces/cleanup.ts";
@@ -21,7 +22,7 @@ export async function dispatchOrder(options: {
   menu: MenuRecord;
   order: OrderRecord;
 }): Promise<RunRecord> {
-  const workspace = ensureWorkspace(options.db, options.root, options.config, options.order);
+  const workspace = await ensureWorkspace(options.db, options.root, options.config, options.order);
   attachWorkspaceToOrder(options.db, options.order.id, workspace.id);
 
   await options.bus.emit({
@@ -29,7 +30,14 @@ export async function dispatchOrder(options: {
     menu_id: options.menu.id,
     order_id: options.order.id,
     role: options.order.role,
-    payload: { workspaceId: workspace.id, path: workspace.path, isolated: false },
+    payload: {
+      workspaceId: workspace.id,
+      path: workspace.path,
+      isolated: workspace.strategy === "worktree",
+      strategy: workspace.strategy,
+      reason: workspace.isolationReason,
+      baseRevision: workspace.baseRevision,
+    },
   });
 
   options.db.query(`UPDATE workspaces SET locked = 1, status = ?, updated_at = ? WHERE id = ?`).run(
@@ -161,7 +169,31 @@ export async function dispatchOrder(options: {
   );
 
   updateOrderStatus(options.db, options.order.id, finishedStatus === "completed" ? "completed" : "failed");
-  releaseWorkspace(options.db, workspace.id);
+
+  if (finishedStatus === "failed") {
+    await scheduleRepairOrder({
+      db: options.db,
+      root: options.root,
+      config: options.config,
+      bus: options.bus,
+      failedOrder: options.order,
+      failedRun: {
+        ...run,
+        command: adapterResult.command,
+        status: finishedStatus,
+        endedAt: finishedAt,
+        exitCode: adapterResult.exitCode,
+        summary: adapterResult.summary,
+        artifactIds: artifacts.map((artifact) => artifact.id),
+        updatedAt: finishedAt,
+      },
+      workspace,
+      stdoutPath: adapterResult.stdoutPath,
+      stderrPath: adapterResult.stderrPath,
+    });
+  }
+
+  await releaseWorkspace(options.db, options.root, options.config, workspace, finishedStatus === "failed");
 
   await options.bus.emit({
     type: adapterResult.exitCode === 0 ? "run.completed" : "run.failed",

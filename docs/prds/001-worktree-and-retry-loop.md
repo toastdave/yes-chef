@@ -1,5 +1,9 @@
 # PRD 001: Worktrees and Scoped Repair Orders
 
+## Status
+
+Foundation in progress. Policy-driven worktree selection, isolated git worktree creation, workspace cleanup behavior, and first-pass repair-order scheduling now exist in the scaffold. Remaining work is deeper policy tuning, richer retry context, and cleaner operator UX around retries and workspace inspection.
+
 ## Problem
 
 The v1 scaffold can track workspace metadata, but it does not yet create isolated git worktrees or generate targeted repair orders after failed validations.

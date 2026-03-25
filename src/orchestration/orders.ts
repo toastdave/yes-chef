@@ -14,6 +14,12 @@ interface OrderRow {
   model: string;
   mode: OrderRecord["mode"];
   backend_agent: string | null;
+  repair_for_order_id: string | null;
+  source_run_id: string | null;
+  retry_count: number;
+  failure_context_json: string;
+  isolation_strategy: OrderRecord["isolationStrategy"];
+  isolation_reason: string;
   profile: string;
   prompt_template: string;
   tools_json: string;
@@ -33,10 +39,11 @@ interface OrderRow {
 export function insertOrder(db: Database, order: OrderRecord): void {
   db.query(
     `INSERT INTO orders (
-      id, menu_id, title, kind, role, agent_id, backend, model, mode, backend_agent, profile,
-      prompt_template, tools_json, permissions_json, workspace_id, depends_on_json, packs_json,
+      id, menu_id, title, kind, role, agent_id, backend, model, mode, backend_agent,
+      repair_for_order_id, source_run_id, retry_count, failure_context_json, isolation_strategy, isolation_reason,
+      profile, prompt_template, tools_json, permissions_json, workspace_id, depends_on_json, packs_json,
       skills_json, validations_required_json, retry_limit, status, priority, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     order.id,
     order.menuId,
@@ -48,6 +55,12 @@ export function insertOrder(db: Database, order: OrderRecord): void {
     order.model,
     order.mode,
     order.backendAgent,
+    order.repairForOrderId,
+    order.sourceRunId,
+    order.retryCount,
+    JSON.stringify(order.failureContext),
+    order.isolationStrategy,
+    order.isolationReason,
     order.profile,
     order.promptTemplate,
     JSON.stringify(order.tools),
@@ -72,6 +85,11 @@ export function getOrderById(db: Database, orderId: string): OrderRecord | null 
 
 export function listOrdersByMenu(db: Database, menuId: string): OrderRecord[] {
   const rows = db.query(`SELECT * FROM orders WHERE menu_id = ? ORDER BY priority ASC, created_at ASC`).all(menuId) as OrderRow[];
+  return rows.map(mapOrderRow);
+}
+
+export function listRepairOrdersForOrder(db: Database, orderId: string): OrderRecord[] {
+  const rows = db.query(`SELECT * FROM orders WHERE repair_for_order_id = ? ORDER BY retry_count ASC, created_at ASC`).all(orderId) as OrderRow[];
   return rows.map(mapOrderRow);
 }
 
@@ -108,6 +126,12 @@ function mapOrderRow(row: OrderRow): OrderRecord {
     model: row.model,
     mode: row.mode,
     backendAgent: row.backend_agent,
+    repairForOrderId: row.repair_for_order_id,
+    sourceRunId: row.source_run_id,
+    retryCount: row.retry_count,
+    failureContext: parseJsonValue<Record<string, unknown>>(row.failure_context_json, {}),
+    isolationStrategy: row.isolation_strategy,
+    isolationReason: row.isolation_reason,
     profile: row.profile,
     promptTemplate: row.prompt_template,
     tools: parseJsonValue<Record<string, unknown>>(row.tools_json, {}),

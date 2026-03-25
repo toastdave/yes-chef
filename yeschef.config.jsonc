@@ -19,6 +19,18 @@
   // "roleDefaults": {
   //   "line-cook": "custom-cook"
   // },
+  "policies": {
+    "worktrees": {
+      "mode": "auto",
+      "cleanup": "delete",
+      "keepFailed": true
+    },
+    "completion": {
+      "requireValidations": true,
+      "conventionalCommits": false
+    },
+    "riskyPaths": []
+  },
   "validations": {
     "typecheck": "bun run typecheck"
   },

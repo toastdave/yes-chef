@@ -18,10 +18,13 @@ export function renderStatusBoard(input: {
     "",
     ...input.orders.map(
       (order) =>
-        `[ ${labelForOrder(order)} ] ${order.title} (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode})`,
+        `[ ${labelForOrder(order)} ] ${order.title} (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode}, retry ${order.retryCount})`,
     ),
     input.workspaces.length > 0 ? "" : null,
-    ...input.workspaces.map((workspace) => `workspace ${workspace.id}: ${workspace.status} -> ${workspace.path}`),
+    ...input.workspaces.map(
+      (workspace) =>
+        `workspace ${workspace.id}: ${workspace.status} ${workspace.strategy}/${workspace.cleanupStatus} -> ${workspace.path} (${workspace.isolationReason})`,
+    ),
   ]
     .filter((line): line is string => Boolean(line))
     .join("\n");
