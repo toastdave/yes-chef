@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 
+import { resolveAgentForRole } from "../core/agents.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { runShellCommand, writeProcessOutput } from "../core/exec.ts";
 import { resolveRuntimePaths } from "../core/fs.ts";
@@ -14,11 +15,17 @@ export async function runMenuValidations(options: {
   config: YesChefConfig;
   bus: EventBus;
   menu: MenuRecord;
+  extraValidations?: Record<string, string>;
 }): Promise<ValidationRecord[]> {
   const results: ValidationRecord[] = [];
   const paths = resolveRuntimePaths(options.root);
+  const expoAgent = resolveAgentForRole(options.config, "expo");
+  const validations = {
+    ...options.config.validations,
+    ...(options.extraValidations ?? {}),
+  };
 
-  for (const [name, command] of Object.entries(options.config.validations)) {
+  for (const [name, command] of Object.entries(validations)) {
     const startedAt = new Date().toISOString();
     const validation: ValidationRecord = {
       id: createId("V"),
@@ -52,7 +59,7 @@ export async function runMenuValidations(options: {
     await options.bus.emit({
       type: "validation.started",
       menu_id: options.menu.id,
-      payload: { validationId: validation.id, name, command },
+      payload: { validationId: validation.id, name, command, agentId: expoAgent.id },
       role: "expo",
     });
 
@@ -72,7 +79,7 @@ export async function runMenuValidations(options: {
     await options.bus.emit({
       type: status === "passed" ? "validation.passed" : "validation.failed",
       menu_id: options.menu.id,
-      payload: { validationId: validation.id, name, outputPath, exitCode: result.exitCode },
+      payload: { validationId: validation.id, name, outputPath, exitCode: result.exitCode, agentId: expoAgent.id },
       role: "expo",
     });
 

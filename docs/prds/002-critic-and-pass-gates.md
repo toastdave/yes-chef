@@ -1,5 +1,9 @@
 # PRD 002: Critic Review and Stronger Pass Gates
 
+## Status
+
+Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, and first-pass Critic review orders routed through configured agents. Remaining work is richer review heuristics, browser-oriented gates, and clearer repair handoff when review blocks shipping.
+
 ## Problem
 
 The current scaffold can run shell validations, but the final pass flow does not yet include a Critic review stage or richer approval states.

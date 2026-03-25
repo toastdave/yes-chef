@@ -170,7 +170,7 @@ export async function dispatchOrder(options: {
 
   updateOrderStatus(options.db, options.order.id, finishedStatus === "completed" ? "completed" : "failed");
 
-  if (finishedStatus === "failed") {
+  if (finishedStatus === "failed" && options.order.kind !== "review") {
     await scheduleRepairOrder({
       db: options.db,
       root: options.root,

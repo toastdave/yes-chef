@@ -88,6 +88,10 @@ export function listOrdersByMenu(db: Database, menuId: string): OrderRecord[] {
   return rows.map(mapOrderRow);
 }
 
+export function listOrdersByKind(db: Database, menuId: string, kind: OrderRecord["kind"]): OrderRecord[] {
+  return listOrdersByMenu(db, menuId).filter((order) => order.kind === kind);
+}
+
 export function listRepairOrdersForOrder(db: Database, orderId: string): OrderRecord[] {
   const rows = db.query(`SELECT * FROM orders WHERE repair_for_order_id = ? ORDER BY retry_count ASC, created_at ASC`).all(orderId) as OrderRow[];
   return rows.map(mapOrderRow);
@@ -95,6 +99,10 @@ export function listRepairOrdersForOrder(db: Database, orderId: string): OrderRe
 
 export function updateOrderStatus(db: Database, orderId: string, status: OrderRecord["status"]): void {
   db.query(`UPDATE orders SET status = ?, updated_at = ? WHERE id = ?`).run(status, new Date().toISOString(), orderId);
+}
+
+export function refreshOrderRunContext(db: Database, orderId: string): void {
+  db.query(`UPDATE orders SET updated_at = ? WHERE id = ?`).run(new Date().toISOString(), orderId);
 }
 
 export function attachWorkspaceToOrder(db: Database, orderId: string, workspaceId: string): void {

@@ -1,9 +1,17 @@
-import type { MenuRecord, ValidationRecord } from "../../core/models.ts";
+import type { MenuRecord, RunRecord, ValidationRecord } from "../../core/models.ts";
 import { daemonRequest } from "../client.ts";
 
 interface PassResponse {
   menu: MenuRecord;
   validations: ValidationRecord[];
+  reviews: RunRecord[];
+  gates: {
+    executionReady: boolean;
+    validationsPassed: boolean;
+    reviewRequired: boolean;
+    reviewPassed: boolean;
+    conventionalCommitReady: boolean;
+  };
 }
 
 export async function runPassCommand(args: string[]): Promise<void> {
@@ -20,4 +28,10 @@ export async function runPassCommand(args: string[]): Promise<void> {
   console.log(`Pass checked for ${result.menu.id}`);
   console.log(`Status: ${result.menu.status}`);
   console.log(`Validations: ${result.validations.map((validation) => `${validation.name}=${validation.status}`).join(", ")}`);
+  console.log(
+    `Gates: execution=${result.gates.executionReady}, validations=${result.gates.validationsPassed}, review=${result.gates.reviewPassed}, conventional=${result.gates.conventionalCommitReady}`,
+  );
+  if (result.reviews.length > 0) {
+    console.log(`Reviews: ${result.reviews.map((review) => `${review.id}=${review.status}`).join(", ")}`);
+  }
 }
