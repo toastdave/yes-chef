@@ -16,6 +16,7 @@ export async function startDaemonServer(root = process.cwd(), port = DEFAULT_DAE
 
   Bun.serve({
     port,
+    idleTimeout: 255,
     fetch(request) {
       return handleRequest({ root, config, db, bus }, request);
     },

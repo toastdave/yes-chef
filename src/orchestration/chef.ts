@@ -5,7 +5,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import type { MenuRecord, RunRecord, ValidationRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
-import { buildKnowledgeContextForGoal } from "../knowledge/context.ts";
+import { buildKnowledgeContextForGoal, buildKnowledgeContextForReview, inferKnowledgeSignals } from "../knowledge/context.ts";
 import { indexKnowledgeDocuments } from "../knowledge/index.ts";
 import { resolveWorkspacePlan } from "../workspaces/create.ts";
 import { runMenuValidations } from "../validation/run-gates.ts";
@@ -67,7 +67,9 @@ export async function prepMenu(options: {
       objective: bundle.menu.objective,
       knowledgeIndexed: knowledge.indexed,
       knowledgeTotal: knowledge.total,
+      knowledgeProfile: knowledgeContext.profile,
       knowledgeMatches: knowledgeContext.results.map((result) => result.path),
+      knowledgeSignals: inferKnowledgeSignals(knowledgeContext),
     },
   });
 
@@ -280,8 +282,10 @@ async function runCriticPass(
     || targetOrder === null
     || reviewOrder.failureContext.reviewTargetOrderId !== targetOrder.id;
 
+  const reviewKnowledge = targetOrder ? buildKnowledgeContextForReview(db, menu, targetOrder) : null;
+
   if (shouldCreateReview) {
-    reviewOrder = createReviewOrder(config, menu, targetOrder);
+    reviewOrder = createReviewOrder(config, menu, targetOrder, reviewKnowledge);
     insertOrder(db, reviewOrder);
     appendOrderToMenu(db, menu.id, reviewOrder.id);
 
@@ -295,6 +299,7 @@ async function runCriticPass(
         kind: reviewOrder.kind,
         agentId: reviewOrder.agentId,
         reviewTargetOrderId: targetOrder?.id ?? null,
+        knowledgeProfile: reviewKnowledge?.profile ?? null,
       },
     });
 
@@ -308,6 +313,7 @@ async function runCriticPass(
         model: reviewOrder.model,
         agentId: reviewOrder.agentId,
         reviewTargetOrderId: targetOrder?.id ?? null,
+        knowledgePaths: reviewKnowledge?.results.map((result) => result.path) ?? [],
       },
     });
   }
@@ -329,6 +335,7 @@ async function runCriticPass(
       agentId: reviewOrder.agentId,
       backend: reviewOrder.backend,
       reviewTargetOrderId: targetOrder?.id ?? null,
+      knowledgeProfile: reviewKnowledge?.profile ?? null,
     },
   });
 
@@ -374,7 +381,12 @@ async function runCriticPass(
   return [reviewRun];
 }
 
-function createReviewOrder(config: YesChefConfig, menu: MenuRecord, targetOrder: ReturnType<typeof latestReviewTargetOrder>) {
+function createReviewOrder(
+  config: YesChefConfig,
+  menu: MenuRecord,
+  targetOrder: ReturnType<typeof latestReviewTargetOrder>,
+  knowledge: ReturnType<typeof buildKnowledgeContextForReview> | null,
+) {
   const now = new Date().toISOString();
   const agent = resolveAgentForRole(config, "critic");
   const orderId = createId("O");
@@ -395,6 +407,8 @@ function createReviewOrder(config: YesChefConfig, menu: MenuRecord, targetOrder:
     failureContext: {
       reviewTargetOrderId: targetOrder?.id ?? null,
       reviewTargetTitle: targetOrder?.title ?? null,
+      knowledgeProfile: knowledge?.profile ?? null,
+      knowledgePaths: knowledge?.results.map((result) => result.path) ?? [],
     },
     isolationStrategy: "in-place",
     isolationReason: "review default",
@@ -431,6 +445,8 @@ function createReviewOrder(config: YesChefConfig, menu: MenuRecord, targetOrder:
     failureContext: {
       reviewTargetOrderId: targetOrder?.id ?? null,
       reviewTargetTitle: targetOrder?.title ?? null,
+      knowledgeProfile: knowledge?.profile ?? null,
+      knowledgePaths: knowledge?.results.map((result) => result.path) ?? [],
     },
     isolationStrategy: workspacePlan.strategy,
     isolationReason: workspacePlan.reason,

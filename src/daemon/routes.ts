@@ -57,7 +57,12 @@ export async function handleRequest(context: DaemonContext, request: Request): P
   if (request.method === "GET" && url.pathname === "/knowledge/search") {
     const query = url.searchParams.get("q") ?? "";
     const limit = Number(url.searchParams.get("limit") ?? "10");
-    return json({ query, results: searchKnowledgeDocuments(context.db, query, limit) });
+    const sourceTypes = url.searchParams.getAll("sourceType");
+    return json({
+      query,
+      sourceTypes,
+      results: searchKnowledgeDocuments(context.db, query, { limit, sourceTypes }),
+    });
   }
 
   if (request.method === "POST" && url.pathname === "/knowledge/index") {

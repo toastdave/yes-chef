@@ -6,7 +6,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { writeJsonFile, writeTextFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
 import type { CourseRecord, MenuRecord, OrderRecord } from "../core/models.ts";
-import type { KnowledgeContext } from "../knowledge/context.ts";
+import { inferKnowledgeSignals, type KnowledgeContext } from "../knowledge/context.ts";
 import { parseJsonValue } from "../core/models.ts";
 import { resolveWorkspacePlan } from "../workspaces/create.ts";
 
@@ -91,7 +91,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     dishes: [goal],
     orders: [orderId],
     validations: Object.keys(config.validations),
-    risks: ["Adapter output is backend-dependent and should stay normalized through Yes Chef events."],
+    risks: buildMenuRisks(knowledge),
     requiredPacks: Object.entries(config.packs)
       .filter(([, pack]) => pack.enabled)
       .map(([name]) => name),
@@ -276,5 +276,28 @@ function buildContextSummary(goal: string, knowledge?: KnowledgeContext): string
   }
 
   const references = knowledge.results.map((result) => result.path).join(", ");
-  return `Tonight's service targets: ${goal}. Relevant local references: ${references}.`;
+  return `Tonight's service targets: ${goal}. Knowledge profile: ${knowledge.profile}. Relevant local references: ${references}.`;
+}
+
+function buildMenuRisks(knowledge?: KnowledgeContext): string[] {
+  const risks = ["Adapter output is backend-dependent and should stay normalized through Yes Chef events."];
+
+  if (!knowledge || knowledge.results.length === 0) {
+    return risks;
+  }
+
+  const signals = inferKnowledgeSignals(knowledge);
+  if (signals.includes("repo-rules")) {
+    risks.push("Repo rules are relevant to this goal; implementation should align with AGENTS and local policies.");
+  }
+
+  if (signals.includes("prd")) {
+    risks.push("Product requirements docs match this goal; check planning and pass criteria against the PRDs.");
+  }
+
+  if (signals.includes("workflow")) {
+    risks.push("Workflow-specific prompts or agent files are relevant; keep execution aligned with those local instructions.");
+  }
+
+  return risks;
 }

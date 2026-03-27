@@ -10,6 +10,7 @@ interface IndexResponse {
 
 interface SearchResponse {
   query: string;
+  sourceTypes: string[];
   results: Array<{
     id: string;
     path: string;
@@ -25,14 +26,23 @@ export async function runKnowledgeCommand(args: string[]): Promise<void> {
   const [subcommand, ...rest] = args;
 
   if (!subcommand || subcommand === "search") {
-    const query = (subcommand === "search" ? rest : args).join(" ").trim();
+    const queryArgs = subcommand === "search" ? rest : args;
+    const { query, sourceTypes } = parseKnowledgeSearchArgs(queryArgs);
 
     if (!query) {
       throw new Error("Usage: yeschef knowledge search <query>");
     }
 
-    const response = await daemonRequest<SearchResponse>(`/knowledge/search?q=${encodeURIComponent(query)}`);
+    const searchParams = new URLSearchParams({ q: query });
+    for (const sourceType of sourceTypes) {
+      searchParams.append("sourceType", sourceType);
+    }
+
+    const response = await daemonRequest<SearchResponse>(`/knowledge/search?${searchParams.toString()}`);
     console.log(`Knowledge results for: ${response.query}`);
+    if (response.sourceTypes.length > 0) {
+      console.log(`Sources: ${response.sourceTypes.join(", ")}`);
+    }
 
     if (response.results.length === 0) {
       console.log("No indexed knowledge matched.");
@@ -55,4 +65,29 @@ export async function runKnowledgeCommand(args: string[]): Promise<void> {
   }
 
   throw new Error("Usage: yeschef knowledge index | yeschef knowledge search <query>");
+}
+
+function parseKnowledgeSearchArgs(args: string[]): { query: string; sourceTypes: string[] } {
+  const queryParts: string[] = [];
+  const sourceTypes: string[] = [];
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === "--source" || arg === "-s") {
+      const value = args[index + 1];
+      if (value) {
+        sourceTypes.push(value);
+        index += 1;
+      }
+      continue;
+    }
+
+    queryParts.push(arg);
+  }
+
+  return {
+    query: queryParts.join(" ").trim(),
+    sourceTypes,
+  };
 }

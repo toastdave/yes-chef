@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 
-import type { KnowledgeSearchResult } from "./types.ts";
+import type { KnowledgeSearchOptions, KnowledgeSearchResult } from "./types.ts";
 
 interface SearchRow {
   id: string;
@@ -12,12 +12,19 @@ interface SearchRow {
   updated_at: string;
 }
 
-export function searchKnowledgeDocuments(db: Database, query: string, limit = 10): KnowledgeSearchResult[] {
+export function searchKnowledgeDocuments(db: Database, query: string, options: KnowledgeSearchOptions = {}): KnowledgeSearchResult[] {
   const expression = buildMatchExpression(query);
+  const limit = options.limit ?? 10;
 
   if (!expression) {
     return [];
   }
+
+  const normalizedSourceTypes = (options.sourceTypes ?? []).filter(Boolean);
+  const sourceFilterClause = normalizedSourceTypes.length > 0
+    ? ` AND kd.source_type IN (${normalizedSourceTypes.map(() => "?").join(", ")})`
+    : "";
+  const params: Array<string | number> = [expression, ...normalizedSourceTypes, limit];
 
   const rows = db
     .query(
@@ -32,10 +39,11 @@ export function searchKnowledgeDocuments(db: Database, query: string, limit = 10
       FROM knowledge_documents_fts
       JOIN knowledge_documents kd ON kd.rowid = knowledge_documents_fts.rowid
       WHERE knowledge_documents_fts MATCH ?
+      ${sourceFilterClause}
       ORDER BY rank ASC
       LIMIT ?`,
     )
-    .all(expression, limit) as SearchRow[];
+    .all(...params) as SearchRow[];
 
   return rows.map((row) => ({
     id: row.id,

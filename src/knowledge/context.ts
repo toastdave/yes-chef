@@ -6,18 +6,49 @@ import type { KnowledgeSearchResult } from "./types.ts";
 
 export interface KnowledgeContext {
   query: string;
+  profile: string;
+  sourceTypes: string[];
   results: KnowledgeSearchResult[];
 }
 
-export function buildKnowledgeContextForGoal(db: Database, goal: string, limit = 3): KnowledgeContext {
-  return searchWithFallback(db, [goal], limit);
+interface KnowledgeProfile {
+  name: string;
+  sourceTypes: string[];
+  limit: number;
+}
+
+const knowledgeProfiles = {
+  planner: {
+    name: "planner",
+    sourceTypes: ["repo-rules", "prd", "project-doc", "project-config", "agent"],
+    limit: 4,
+  },
+  implementer: {
+    name: "implementer",
+    sourceTypes: ["repo-rules", "project-doc", "prd", "prompt", "agent"],
+    limit: 4,
+  },
+  repair: {
+    name: "repair",
+    sourceTypes: ["repo-rules", "prd", "prompt", "agent", "project-doc"],
+    limit: 5,
+  },
+  critic: {
+    name: "critic",
+    sourceTypes: ["repo-rules", "prd", "project-doc", "agent"],
+    limit: 5,
+  },
+} satisfies Record<string, KnowledgeProfile>;
+
+export function buildKnowledgeContextForGoal(db: Database, goal: string, limit = knowledgeProfiles.planner.limit): KnowledgeContext {
+  return searchWithFallback(db, [goal], { ...knowledgeProfiles.planner, limit });
 }
 
 export function buildKnowledgeContextForOrder(
   db: Database,
   menu: MenuRecord,
   order: OrderRecord,
-  limit = 4,
+  limit = knowledgeProfiles.implementer.limit,
 ): KnowledgeContext {
   return searchWithFallback(
     db,
@@ -28,20 +59,62 @@ export function buildKnowledgeContextForOrder(
       order.skills.join(" "),
       order.validationsRequired.join(" "),
     ],
-    limit,
+    { ...knowledgeProfiles.implementer, limit },
   );
 }
 
-export function buildKnowledgeContextForRepairTarget(db: Database, order: OrderRecord, limit = 4): KnowledgeContext {
+export function buildKnowledgeContextForRepairTarget(
+  db: Database,
+  order: OrderRecord,
+  limit = knowledgeProfiles.repair.limit,
+): KnowledgeContext {
   return searchWithFallback(
     db,
     [order.title, order.skills.join(" "), order.validationsRequired.join(" ")],
-    limit,
+    { ...knowledgeProfiles.repair, limit },
+  );
+}
+
+export function buildKnowledgeContextForReview(
+  db: Database,
+  menu: MenuRecord,
+  targetOrder: OrderRecord,
+  limit = knowledgeProfiles.critic.limit,
+): KnowledgeContext {
+  return searchWithFallback(
+    db,
+    [
+      `${menu.objective} ${targetOrder.title}`,
+      targetOrder.title,
+      targetOrder.skills.join(" "),
+      targetOrder.validationsRequired.join(" "),
+    ],
+    { ...knowledgeProfiles.critic, limit },
   );
 }
 
 export function formatKnowledgeReferences(results: KnowledgeSearchResult[]): string[] {
   return results.map((result) => `${result.title} (${result.path}) - ${result.snippet}`);
+}
+
+export function inferKnowledgeSignals(context: KnowledgeContext): string[] {
+  const signals = new Set<string>();
+
+  for (const result of context.results) {
+    if (result.sourceType === "repo-rules") {
+      signals.add("repo-rules");
+    }
+
+    if (result.sourceType === "prd") {
+      signals.add("prd");
+    }
+
+    if (result.sourceType === "agent" || result.sourceType === "prompt") {
+      signals.add("workflow");
+    }
+  }
+
+  return [...signals];
 }
 
 function buildSearchQuery(parts: string[]): string {
@@ -53,7 +126,7 @@ function buildSearchQuery(parts: string[]): string {
     .join(" ");
 }
 
-function searchWithFallback(db: Database, candidates: string[], limit: number): KnowledgeContext {
+function searchWithFallback(db: Database, candidates: string[], profile: KnowledgeProfile): KnowledgeContext {
   for (const candidate of candidates) {
     const query = buildSearchQuery([candidate]);
 
@@ -61,11 +134,24 @@ function searchWithFallback(db: Database, candidates: string[], limit: number): 
       continue;
     }
 
-    const results = searchKnowledgeDocuments(db, query, limit);
+    const results = searchKnowledgeDocuments(db, query, {
+      limit: profile.limit,
+      sourceTypes: profile.sourceTypes,
+    });
     if (results.length > 0) {
-      return { query, results };
+      return {
+        query,
+        profile: profile.name,
+        sourceTypes: profile.sourceTypes,
+        results,
+      };
     }
   }
 
-  return { query: buildSearchQuery(candidates), results: [] };
+  return {
+    query: buildSearchQuery(candidates),
+    profile: profile.name,
+    sourceTypes: profile.sourceTypes,
+    results: [],
+  };
 }

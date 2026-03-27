@@ -41,7 +41,7 @@ When Critic fails, Yes Chef can now hand that failure back into the repair loop 
 ## Knowledge
 
 - `yeschef knowledge index` refreshes the local document index from repo rules, PRDs, prompts, config, and agent files
-- `yeschef knowledge search "..."` runs SQLite FTS search over the indexed knowledge store
+- `yeschef knowledge search "..." --source prd` runs SQLite FTS search over the indexed knowledge store with optional source filters
 - `yeschef prep` refreshes the index before creating a menu so planning has fresh local context available
 - implementation, review, and repair prompts now pull top local knowledge hits into their execution brief automatically
 

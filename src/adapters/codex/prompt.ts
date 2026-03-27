@@ -20,6 +20,8 @@ export function buildCodexPrompt(menu: MenuRecord, order: OrderRecord, knowledge
     `Tools: ${toolList.join(", ") || "inherit"}`,
     `Permissions: ${JSON.stringify(order.permissions)}`,
     `Validations required: ${order.validationsRequired.join(", ") || "none"}`,
+    knowledge && knowledge.results.length > 0 ? `Knowledge profile: ${knowledge.profile}` : null,
+    knowledge && knowledge.results.length > 0 ? `Knowledge source types: ${knowledge.sourceTypes.join(", ")}` : null,
     knowledge && knowledge.results.length > 0 ? `Knowledge query: ${knowledge.query}` : null,
     knowledge && knowledge.results.length > 0 ? "Relevant local knowledge:" : null,
     ...(knowledge && knowledge.results.length > 0 ? references : []),

@@ -20,6 +20,11 @@ export interface KnowledgeSearchResult {
   updatedAt: string;
 }
 
+export interface KnowledgeSearchOptions {
+  limit?: number;
+  sourceTypes?: string[];
+}
+
 export interface KnowledgeIndexResult {
   indexed: number;
   skipped: number;

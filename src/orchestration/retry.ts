@@ -7,7 +7,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { runShellCommand } from "../core/exec.ts";
 import { writeJsonFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
-import { buildKnowledgeContextForRepairTarget } from "../knowledge/context.ts";
+import { buildKnowledgeContextForRepairTarget, inferKnowledgeSignals } from "../knowledge/context.ts";
 import type { OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
 
@@ -164,6 +164,9 @@ async function buildFailureContext(options: {
       agentId: options.repairTargetOrder.agentId,
     },
     knowledge: {
+      profile: knowledge.profile,
+      sourceTypes: knowledge.sourceTypes,
+      signals: inferKnowledgeSignals(knowledge),
       query: knowledge.query,
       results: knowledge.results,
     },
