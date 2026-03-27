@@ -3,6 +3,7 @@
 import { logError } from "../core/logger.ts";
 import { runDoctorCommand } from "./commands/doctor.ts";
 import { runFireCommand } from "./commands/fire.ts";
+import { runKnowledgeCommand } from "./commands/knowledge.ts";
 import { runLogsCommand } from "./commands/logs.ts";
 import { runPassCommand } from "./commands/pass.ts";
 import { runPrepCommand } from "./commands/prep.ts";
@@ -31,6 +32,9 @@ try {
     case "logs":
       await runLogsCommand(args);
       break;
+    case "knowledge":
+      await runKnowledgeCommand(args);
+      break;
     case "doctor":
       await runDoctorCommand();
       break;
@@ -58,5 +62,7 @@ Commands:
   yeschef status
   yeschef setup
   yeschef logs <run-id>
+  yeschef knowledge index
+  yeschef knowledge search <query>
   yeschef doctor`);
 }

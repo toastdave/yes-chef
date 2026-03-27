@@ -5,6 +5,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import type { MenuRecord, RunRecord, ValidationRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
+import { indexKnowledgeDocuments } from "../knowledge/index.ts";
 import { resolveWorkspacePlan } from "../workspaces/create.ts";
 import { runMenuValidations } from "../validation/run-gates.ts";
 import { dispatchOrder } from "./dispatcher.ts";
@@ -45,6 +46,7 @@ export async function prepMenu(options: {
   bus: EventBus;
   goal: string;
 }): Promise<PrepResult> {
+  const knowledge = await indexKnowledgeDocuments(options.db, options.root);
   const bundle = buildMenuBundle(options.goal, options.config);
   insertMenu(options.db, bundle.menu);
 
@@ -58,7 +60,12 @@ export async function prepMenu(options: {
     type: "menu.created",
     menu_id: bundle.menu.id,
     role: "chef",
-    payload: { title: bundle.menu.title, objective: bundle.menu.objective },
+    payload: {
+      title: bundle.menu.title,
+      objective: bundle.menu.objective,
+      knowledgeIndexed: knowledge.indexed,
+      knowledgeTotal: knowledge.total,
+    },
   });
 
   for (const order of bundle.orders) {

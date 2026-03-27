@@ -111,8 +111,42 @@ export const schemaStatements = [
     role TEXT,
     payload_json TEXT NOT NULL
   )`,
+  `CREATE TABLE IF NOT EXISTS knowledge_documents (
+    id TEXT PRIMARY KEY,
+    path TEXT NOT NULL UNIQUE,
+    source_type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    metadata_json TEXT NOT NULL,
+    content_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    indexed_at TEXT NOT NULL
+  )`,
+  `CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_documents_fts USING fts5(
+    title,
+    body,
+    path,
+    source_type,
+    content='knowledge_documents',
+    content_rowid='rowid'
+  )`,
+  `CREATE TRIGGER IF NOT EXISTS knowledge_documents_ai AFTER INSERT ON knowledge_documents BEGIN
+    INSERT INTO knowledge_documents_fts(rowid, title, body, path, source_type)
+    VALUES (new.rowid, new.title, new.body, new.path, new.source_type);
+  END`,
+  `CREATE TRIGGER IF NOT EXISTS knowledge_documents_ad AFTER DELETE ON knowledge_documents BEGIN
+    INSERT INTO knowledge_documents_fts(knowledge_documents_fts, rowid, title, body, path, source_type)
+    VALUES('delete', old.rowid, old.title, old.body, old.path, old.source_type);
+  END`,
+  `CREATE TRIGGER IF NOT EXISTS knowledge_documents_au AFTER UPDATE ON knowledge_documents BEGIN
+    INSERT INTO knowledge_documents_fts(knowledge_documents_fts, rowid, title, body, path, source_type)
+    VALUES('delete', old.rowid, old.title, old.body, old.path, old.source_type);
+    INSERT INTO knowledge_documents_fts(rowid, title, body, path, source_type)
+    VALUES (new.rowid, new.title, new.body, new.path, new.source_type);
+  END`,
   `CREATE INDEX IF NOT EXISTS idx_orders_menu_id ON orders(menu_id)`,
   `CREATE INDEX IF NOT EXISTS idx_runs_order_id ON runs(order_id)`,
   `CREATE INDEX IF NOT EXISTS idx_events_menu_id ON events(menu_id)`,
   `CREATE INDEX IF NOT EXISTS idx_events_order_id ON events(order_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_knowledge_documents_path ON knowledge_documents(path)`,
 ];

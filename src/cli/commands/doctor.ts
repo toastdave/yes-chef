@@ -2,7 +2,9 @@ import { listResolvedAgents, resolveAgent, resolveAgentForRole } from "../../cor
 import { listBackendAvailability } from "../../core/backends.ts";
 import { loadConfigWithMeta } from "../../core/config.ts";
 import { ensureRuntimePaths } from "../../core/fs.ts";
+import { getDatabase } from "../../db/client.ts";
 import { migrateDatabase } from "../../db/migrate.ts";
+import { countKnowledgeDocuments } from "../../knowledge/search.ts";
 import { daemonUrl } from "../client.ts";
 
 export async function runDoctorCommand(): Promise<void> {
@@ -10,6 +12,7 @@ export async function runDoctorCommand(): Promise<void> {
   const { config, sources } = loaded;
   const runtimePaths = await ensureRuntimePaths();
   await migrateDatabase();
+  const db = getDatabase();
   const backends = listBackendAvailability(config);
   const defaultAgent = resolveAgent(config, config.defaults.agent);
   const roleLines = Object.keys(config.roleDefaults)
@@ -41,6 +44,7 @@ export async function runDoctorCommand(): Promise<void> {
 
   console.log(`${(await pingDaemon()).padEnd(7)} daemon             ${daemonUrl()}`);
   console.log(`ok      agents             ${listResolvedAgents(config).length} configured`);
+  console.log(`ok      knowledge          ${countKnowledgeDocuments(db)} indexed docs`);
 }
 
 async function pingDaemon(): Promise<string> {

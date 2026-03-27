@@ -10,6 +10,8 @@ bun run cli setup
 bun run daemon
 bun run cli prep "Build the invite flow"
 bun run cli status
+bun run cli knowledge index
+bun run cli knowledge search "worktree retry"
 bun run cli doctor
 ```
 
@@ -35,6 +37,12 @@ The scaffold now supports minimal policy controls in config.
 
 `yeschef pass` now uses those policies to run deterministic validation gates and, when review is required by the active mode, dispatch a Critic review order through the configured agent/backend.
 When Critic fails, Yes Chef can now hand that failure back into the repair loop so the next implementation order carries reviewer context instead of only raw harness logs.
+
+## Knowledge
+
+- `yeschef knowledge index` refreshes the local document index from repo rules, PRDs, prompts, config, and agent files
+- `yeschef knowledge search "..."` runs SQLite FTS search over the indexed knowledge store
+- `yeschef prep` refreshes the index before creating a menu so planning has fresh local context available
 
 ## Custom agents
 

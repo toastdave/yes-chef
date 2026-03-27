@@ -13,6 +13,7 @@ export interface RuntimePaths {
   artifactsDir: string;
   promptsDir: string;
   patchesDir: string;
+  knowledgeDir: string;
   dbPath: string;
   eventLogPath: string;
 }
@@ -30,6 +31,7 @@ export function resolveRuntimePaths(root = process.cwd()): RuntimePaths {
     artifactsDir: join(runtimeRoot, "artifacts"),
     promptsDir: join(runtimeRoot, "prompts"),
     patchesDir: join(runtimeRoot, "patches"),
+    knowledgeDir: join(runtimeRoot, "knowledge"),
     dbPath: join(runtimeRoot, "db", "yeschef.sqlite"),
     eventLogPath: join(runtimeRoot, "runs", EVENT_LOG_FILE_NAME),
   };
@@ -46,6 +48,7 @@ export async function ensureRuntimePaths(root = process.cwd()): Promise<RuntimeP
     mkdir(paths.artifactsDir, { recursive: true }),
     mkdir(paths.promptsDir, { recursive: true }),
     mkdir(paths.patchesDir, { recursive: true }),
+    mkdir(paths.knowledgeDir, { recursive: true }),
   ]);
 
   return paths;

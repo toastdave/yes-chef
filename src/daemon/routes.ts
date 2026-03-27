@@ -3,6 +3,8 @@ import type { Database } from "bun:sqlite";
 import type { YesChefConfig } from "../core/config.ts";
 import type { EventBus } from "../events/emit.ts";
 import { listEvents } from "../events/store.ts";
+import { indexKnowledgeDocuments } from "../knowledge/index.ts";
+import { countKnowledgeDocuments, searchKnowledgeDocuments } from "../knowledge/search.ts";
 import { getMenuById } from "../orchestration/menu.ts";
 import { getOrderById } from "../orchestration/orders.ts";
 import { buildStatusSnapshot, fireMenu, passMenu, prepMenu } from "../orchestration/chef.ts";
@@ -50,6 +52,17 @@ export async function handleRequest(context: DaemonContext, request: Request): P
 
   if (request.method === "GET" && url.pathname === "/status") {
     return json(buildStatusSnapshot(context.db));
+  }
+
+  if (request.method === "GET" && url.pathname === "/knowledge/search") {
+    const query = url.searchParams.get("q") ?? "";
+    const limit = Number(url.searchParams.get("limit") ?? "10");
+    return json({ query, results: searchKnowledgeDocuments(context.db, query, limit) });
+  }
+
+  if (request.method === "POST" && url.pathname === "/knowledge/index") {
+    const result = await indexKnowledgeDocuments(context.db, context.root);
+    return json({ ...result, indexedDocuments: countKnowledgeDocuments(context.db) });
   }
 
   if (request.method === "GET" && url.pathname === "/events") {

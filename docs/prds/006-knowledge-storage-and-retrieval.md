@@ -2,7 +2,7 @@
 
 ## Status
 
-Not started. Current scaffold stores operational state in SQLite and artifacts on disk, but it does not yet provide a first-class knowledge system for docs, skills, prompts, or learned project context.
+Foundation in progress. The scaffold now has a local knowledge document table, SQLite FTS indexing, daemon endpoints for indexing and search, and a CLI path for indexing and querying repo knowledge. Remaining work is richer source coverage, retrieval composition with runtime state, and optional semantic search.
 
 ## Problem
 
