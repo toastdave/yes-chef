@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. The scaffold now has a local knowledge document table, SQLite FTS indexing, daemon endpoints for indexing and search, a CLI path for indexing and querying repo knowledge, source-filtered retrieval, and first-pass use of retrieved knowledge during prep and runtime prompt construction. Remaining work is richer source coverage, retrieval composition with runtime state, and optional semantic search.
+Foundation in progress. The scaffold now has a local knowledge document table, SQLite FTS indexing, daemon endpoints for indexing and search, a CLI path for indexing and querying repo knowledge, source-filtered retrieval, a combined state-plus-knowledge lookup path, and first-pass use of retrieved knowledge during prep and runtime prompt construction. Remaining work is richer source coverage, better ranking, and optional semantic search.
 
 ## Problem
 

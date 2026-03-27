@@ -10,6 +10,7 @@ bun run cli setup
 bun run daemon
 bun run cli prep "Build the invite flow"
 bun run cli status
+bun run cli lookup "repair critic"
 bun run cli knowledge index
 bun run cli knowledge search "worktree retry"
 bun run cli doctor
@@ -42,6 +43,7 @@ When Critic fails, Yes Chef can now hand that failure back into the repair loop 
 
 - `yeschef knowledge index` refreshes the local document index from repo rules, PRDs, prompts, config, and agent files
 - `yeschef knowledge search "..." --source prd` runs SQLite FTS search over the indexed knowledge store with optional source filters
+- `yeschef lookup "..."` combines runtime state search with knowledge search so orders, runs, workspaces, validations, and docs can be searched together
 - `yeschef prep` refreshes the index before creating a menu so planning has fresh local context available
 - implementation, review, and repair prompts now pull top local knowledge hits into their execution brief automatically
 

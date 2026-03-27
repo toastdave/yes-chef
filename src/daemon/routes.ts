@@ -3,6 +3,7 @@ import type { Database } from "bun:sqlite";
 import type { YesChefConfig } from "../core/config.ts";
 import type { EventBus } from "../events/emit.ts";
 import { listEvents } from "../events/store.ts";
+import { lookupStateAndKnowledge } from "../lookup/query.ts";
 import { indexKnowledgeDocuments } from "../knowledge/index.ts";
 import { countKnowledgeDocuments, searchKnowledgeDocuments } from "../knowledge/search.ts";
 import { getMenuById } from "../orchestration/menu.ts";
@@ -63,6 +64,13 @@ export async function handleRequest(context: DaemonContext, request: Request): P
       sourceTypes,
       results: searchKnowledgeDocuments(context.db, query, { limit, sourceTypes }),
     });
+  }
+
+  if (request.method === "GET" && url.pathname === "/lookup") {
+    const query = url.searchParams.get("q") ?? "";
+    const limit = Number(url.searchParams.get("limit") ?? "6");
+    const sourceTypes = url.searchParams.getAll("sourceType");
+    return json(lookupStateAndKnowledge(context.db, query, { limit, sourceTypes }));
   }
 
   if (request.method === "POST" && url.pathname === "/knowledge/index") {
