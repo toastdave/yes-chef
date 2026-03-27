@@ -17,8 +17,7 @@ export function renderStatusBoard(input: {
     `Objective: ${activeMenu.objective}`,
     "",
     ...input.orders.map(
-      (order) =>
-        `[ ${labelForOrder(order)} ] ${order.title} (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode}, retry ${order.retryCount})`,
+      (order) => `[ ${labelForOrder(order)} ] ${order.title}${orderMeta(order)}`,
     ),
     input.workspaces.length > 0 ? "" : null,
     ...input.workspaces.map(
@@ -35,4 +34,14 @@ function labelForOrder(order: OrderRecord): string {
   if (order.status === "completed") return `${order.role.padEnd(13)} plated`;
   if (order.status === "failed") return `${order.role.padEnd(13)} blocked`;
   return `${order.role.padEnd(13)} mise en place`;
+}
+
+function orderMeta(order: OrderRecord): string {
+  const relation = order.kind === "repair"
+    ? ` repair-for ${order.repairForOrderId}`
+    : order.kind === "review"
+      ? ` review${typeof order.failureContext.reviewTargetOrderId === "string" ? ` for ${order.failureContext.reviewTargetOrderId}` : ""}`
+      : ` ${order.kind}`;
+
+  return ` (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode}, retry ${order.retryCount},${relation})`;
 }

@@ -1,9 +1,24 @@
+import type { OrderRecord } from "../../core/models.ts";
 import { daemonRequest } from "../client.ts";
 
 interface RunResponse {
-  id: string;
-  summary: string | null;
-  artifact_ids_json: string;
+  run: {
+    id: string;
+    order_id: string;
+    backend: string;
+    model: string;
+    mode: string;
+    backend_agent: string | null;
+    status: string;
+    summary: string | null;
+    artifact_ids_json: string;
+  };
+  order: OrderRecord | null;
+  artifacts: Array<{
+    id: string;
+    type: string;
+    path: string;
+  }>;
 }
 
 export async function runLogsCommand(args: string[]): Promise<void> {
@@ -13,16 +28,39 @@ export async function runLogsCommand(args: string[]): Promise<void> {
     throw new Error("Usage: yeschef logs <run-id>");
   }
 
-  const run = await daemonRequest<RunResponse>(`/runs/${runId}`);
+  const response = await daemonRequest<RunResponse>(`/runs/${runId}`);
+  const { run, order, artifacts } = response;
+
   console.log(`Run ${run.id}`);
+  console.log(`Status: ${run.status}`);
+  console.log(`Backend: ${run.backend} (${run.model}, ${run.mode}${run.backend_agent ? `:${run.backend_agent}` : ""})`);
   console.log(run.summary ?? "No summary recorded.");
 
-  const artifactIds = JSON.parse(run.artifact_ids_json) as string[];
-  if (artifactIds.length === 0) {
+  if (order) {
+    console.log(`Order: ${order.id} ${order.kind} ${order.title}`);
+    console.log(`Agent: ${order.agentId}`);
+    if (order.repairForOrderId) {
+      console.log(`Repairs: ${order.repairForOrderId} via ${order.sourceRunId ?? "unknown run"}`);
+    }
+
+    const failureContextPath = typeof order.failureContext.contextPath === "string" ? order.failureContext.contextPath : null;
+    if (failureContextPath) {
+      console.log(`Failure context: ${failureContextPath}`);
+    }
+
+    const reviewTarget = typeof order.failureContext.reviewTargetOrderId === "string" ? order.failureContext.reviewTargetOrderId : null;
+    if (reviewTarget) {
+      console.log(`Review target: ${reviewTarget}`);
+    }
+  }
+
+  if (artifacts.length === 0) {
     console.log("No artifacts recorded.");
     return;
   }
 
-  console.log(`Artifact IDs: ${artifactIds.join(", ")}`);
-  console.log("Inspect `.yeschef/db/yeschef.sqlite` or `.yeschef/artifacts/` for stored logs.");
+  console.log("Artifacts:");
+  for (const artifact of artifacts) {
+    console.log(`- ${artifact.type}: ${artifact.path} (${artifact.id})`);
+  }
 }

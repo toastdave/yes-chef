@@ -20,11 +20,14 @@ export async function scheduleRepairOrder(options: {
   workspace: WorkspaceRecord;
   stdoutPath: string;
   stderrPath: string;
+  repairTargetOrder?: OrderRecord;
+  reason?: string;
 }): Promise<OrderRecord | null> {
-  const latestOrders = listOrdersByMenu(options.db, options.failedOrder.menuId);
+  const repairTarget = options.repairTargetOrder ?? options.failedOrder;
+  const latestOrders = listOrdersByMenu(options.db, repairTarget.menuId);
   const existingRepair = latestOrders.find(
     (order) =>
-      order.repairForOrderId === options.failedOrder.id &&
+      order.repairForOrderId === repairTarget.id &&
       (order.status === "pending" || order.status === "queued" || order.status === "running" || order.status === "completed"),
   );
 
@@ -32,33 +35,46 @@ export async function scheduleRepairOrder(options: {
     return null;
   }
 
-  if (options.failedOrder.retryCount >= options.failedOrder.retryLimit) {
+  if (repairTarget.retryCount >= repairTarget.retryLimit) {
     await options.bus.emit({
       type: "order.blocked",
-      menu_id: options.failedOrder.menuId,
-      order_id: options.failedOrder.id,
-      role: options.failedOrder.role,
-      payload: { reason: "retry limit reached", retryCount: options.failedOrder.retryCount, retryLimit: options.failedOrder.retryLimit },
+      menu_id: repairTarget.menuId,
+      order_id: repairTarget.id,
+      role: repairTarget.role,
+      payload: {
+        reason: options.reason ?? "retry limit reached",
+        retryCount: repairTarget.retryCount,
+        retryLimit: repairTarget.retryLimit,
+        triggerOrderId: options.failedOrder.id,
+      },
     });
     return null;
   }
 
-  const context = await buildFailureContext(options);
+  const context = await buildFailureContext({
+    root: options.root,
+    failedOrder: options.failedOrder,
+    failedRun: options.failedRun,
+    workspace: options.workspace,
+    stdoutPath: options.stdoutPath,
+    stderrPath: options.stderrPath,
+    repairTargetOrder: repairTarget,
+  });
   const now = new Date().toISOString();
   const order: OrderRecord = {
-    ...options.failedOrder,
+    ...repairTarget,
     id: createId("O"),
-    title: `Repair ${options.failedOrder.title}`,
+    title: options.failedOrder.kind === "review" ? `Repair ${repairTarget.title} after review` : `Repair ${repairTarget.title}`,
     kind: "repair",
-    repairForOrderId: options.failedOrder.id,
+    repairForOrderId: repairTarget.id,
     sourceRunId: options.failedRun.id,
-    retryCount: options.failedOrder.retryCount + 1,
+    retryCount: repairTarget.retryCount + 1,
     failureContext: context,
     isolationStrategy: "worktree",
-    isolationReason: "repair order replays failure in isolated workspace",
+    isolationReason: options.reason ?? "repair order replays failure in isolated workspace",
     workspaceId: null,
-    dependsOn: [...options.failedOrder.dependsOn],
-    skills: [...options.failedOrder.skills, "repair"],
+    dependsOn: [...repairTarget.dependsOn],
+    skills: [...repairTarget.skills, options.failedOrder.kind === "review" ? "review-repair" : "repair"],
     status: "queued",
     createdAt: now,
     updatedAt: now,
@@ -69,19 +85,25 @@ export async function scheduleRepairOrder(options: {
 
   await options.bus.emit({
     type: "order.created",
-    menu_id: order.menuId,
-    order_id: order.id,
-    role: order.role,
-    payload: { title: order.title, kind: order.kind, agentId: order.agentId, repairForOrderId: order.repairForOrderId },
-  });
+      menu_id: order.menuId,
+      order_id: order.id,
+      role: order.role,
+      payload: {
+        title: order.title,
+        kind: order.kind,
+        agentId: order.agentId,
+        repairForOrderId: order.repairForOrderId,
+        triggerOrderId: options.failedOrder.id,
+      },
+    });
 
   await options.bus.emit({
     type: "order.queued",
     menu_id: order.menuId,
     order_id: order.id,
-    role: order.role,
-    payload: { backend: order.backend, model: order.model, retryCount: order.retryCount },
-  });
+      role: order.role,
+      payload: { backend: order.backend, model: order.model, retryCount: order.retryCount, triggerOrderKind: options.failedOrder.kind },
+    });
 
   await options.bus.emit({
     type: "retry.scheduled",
@@ -89,13 +111,15 @@ export async function scheduleRepairOrder(options: {
     order_id: order.id,
     run_id: options.failedRun.id,
     role: order.role,
-    payload: {
-      repairForOrderId: options.failedOrder.id,
-      sourceRunId: options.failedRun.id,
-      retryCount: order.retryCount,
-      contextPath: context.contextPath,
-    },
-  });
+      payload: {
+        repairForOrderId: repairTarget.id,
+        sourceRunId: options.failedRun.id,
+        retryCount: order.retryCount,
+        contextPath: context.contextPath,
+        triggerOrderId: options.failedOrder.id,
+        triggerOrderKind: options.failedOrder.kind,
+      },
+    });
 
   return order;
 }
@@ -107,12 +131,15 @@ async function buildFailureContext(options: {
   workspace: WorkspaceRecord;
   stdoutPath: string;
   stderrPath: string;
+  repairTargetOrder: OrderRecord;
 }): Promise<Record<string, unknown>> {
   const gitStatus = await runShellCommand("git status --short", { cwd: options.workspace.path });
   const changedFiles = await runShellCommand("git diff --name-only", { cwd: options.workspace.path });
   const contextPath = join(options.root, ".yeschef", "artifacts", `${options.failedRun.id}-repair-context.json`);
   const context = {
-    repairForOrderId: options.failedOrder.id,
+    repairForOrderId: options.repairTargetOrder.id,
+    triggerOrderId: options.failedOrder.id,
+    triggerOrderKind: options.failedOrder.kind,
     sourceRunId: options.failedRun.id,
     summary: options.failedRun.summary,
     exitCode: options.failedRun.exitCode,
@@ -121,10 +148,16 @@ async function buildFailureContext(options: {
     changedFiles: changedFiles.stdout.split(/\r?\n/).filter(Boolean),
     gitStatus: gitStatus.stdout.split(/\r?\n/).filter(Boolean),
     acceptanceCriteria: {
-      promptTemplate: options.failedOrder.promptTemplate,
-      validationsRequired: options.failedOrder.validationsRequired,
-      tools: options.failedOrder.tools,
-      permissions: options.failedOrder.permissions,
+      promptTemplate: options.repairTargetOrder.promptTemplate,
+      validationsRequired: options.repairTargetOrder.validationsRequired,
+      tools: options.repairTargetOrder.tools,
+      permissions: options.repairTargetOrder.permissions,
+    },
+    repairTarget: {
+      orderId: options.repairTargetOrder.id,
+      title: options.repairTargetOrder.title,
+      role: options.repairTargetOrder.role,
+      agentId: options.repairTargetOrder.agentId,
     },
     workspace: {
       path: options.workspace.path,

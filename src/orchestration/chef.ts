@@ -11,6 +11,7 @@ import { dispatchOrder } from "./dispatcher.ts";
 import { appendOrderToMenu, buildMenuBundle, getMenuById, insertMenu, listMenus, persistMenuArtifacts, updateMenuStatus } from "./menu.ts";
 import { insertOrder, listOrdersByKind, listOrdersByMenu, updateOrderStatus } from "./orders.ts";
 import { reconcileMenuStatus } from "./reconciler.ts";
+import { scheduleRepairOrder } from "./retry.ts";
 import { getNextRunnableOrders } from "./scheduler.ts";
 import { listWorkspaceRecords } from "../workspaces/status.ts";
 
@@ -255,18 +256,22 @@ async function runCriticPass(
   bus: EventBus,
   menu: MenuRecord,
 ): Promise<RunRecord[]> {
-  const existingReviews = listOrdersByKind(db, menu.id, "review");
+  const allOrders = listOrdersByMenu(db, menu.id);
+  const existingReviews = allOrders.filter((order) => order.kind === "review");
   const latestReview = existingReviews.at(-1) ?? null;
-  const implementationUpdatedAt = latestImplementationTimestamp(listOrdersByMenu(db, menu.id));
+  const targetOrder = latestReviewTargetOrder(allOrders);
+  const implementationUpdatedAt = latestImplementationTimestamp(allOrders);
 
   let reviewOrder = latestReview;
-  const shouldCreateReview = !reviewOrder;
-  const shouldRerunReview =
-    reviewOrder !== null
-    && (reviewOrder.status !== "completed" || implementationUpdatedAt > reviewOrder.updatedAt);
+  const shouldCreateReview =
+    !reviewOrder
+    || reviewOrder.status !== "completed"
+    || implementationUpdatedAt > reviewOrder.updatedAt
+    || targetOrder === null
+    || reviewOrder.failureContext.reviewTargetOrderId !== targetOrder.id;
 
   if (shouldCreateReview) {
-    reviewOrder = createReviewOrder(config, menu);
+    reviewOrder = createReviewOrder(config, menu, targetOrder);
     insertOrder(db, reviewOrder);
     appendOrderToMenu(db, menu.id, reviewOrder.id);
 
@@ -275,7 +280,25 @@ async function runCriticPass(
       menu_id: menu.id,
       order_id: reviewOrder.id,
       role: reviewOrder.role,
-      payload: { title: reviewOrder.title, kind: reviewOrder.kind, agentId: reviewOrder.agentId },
+      payload: {
+        title: reviewOrder.title,
+        kind: reviewOrder.kind,
+        agentId: reviewOrder.agentId,
+        reviewTargetOrderId: targetOrder?.id ?? null,
+      },
+    });
+
+    await bus.emit({
+      type: "order.queued",
+      menu_id: menu.id,
+      order_id: reviewOrder.id,
+      role: reviewOrder.role,
+      payload: {
+        backend: reviewOrder.backend,
+        model: reviewOrder.model,
+        agentId: reviewOrder.agentId,
+        reviewTargetOrderId: targetOrder?.id ?? null,
+      },
     });
   }
 
@@ -283,18 +306,20 @@ async function runCriticPass(
     return [];
   }
 
-  if (reviewOrder.status === "completed" && !shouldRerunReview) {
+  if (!shouldCreateReview && reviewOrder.status === "completed") {
     return [];
   }
-
-  updateOrderStatus(db, reviewOrder.id, "queued");
 
   await bus.emit({
     type: "review.started",
     menu_id: menu.id,
     order_id: reviewOrder.id,
     role: reviewOrder.role,
-    payload: { agentId: reviewOrder.agentId, backend: reviewOrder.backend },
+    payload: {
+      agentId: reviewOrder.agentId,
+      backend: reviewOrder.backend,
+      reviewTargetOrderId: targetOrder?.id ?? null,
+    },
   });
 
   const reviewRun = await dispatchOrder({
@@ -305,6 +330,27 @@ async function runCriticPass(
     menu,
     order: reviewOrder,
   });
+
+  if (reviewRun.status === "failed" && targetOrder) {
+    const reviewWorkspace = listWorkspaceRecords(db).find((workspace) => workspace.orderId === reviewOrder.id) ?? null;
+    const { stdoutPath, stderrPath } = artifactPathsForRun(db, reviewRun.id);
+
+    if (reviewWorkspace) {
+      await scheduleRepairOrder({
+        db,
+        root,
+        config,
+        bus,
+        failedOrder: reviewOrder,
+        failedRun: reviewRun,
+        repairTargetOrder: targetOrder,
+        workspace: reviewWorkspace,
+        stdoutPath,
+        stderrPath,
+        reason: "critic review requested implementation repair",
+      });
+    }
+  }
 
   await bus.emit({
     type: "review.completed",
@@ -318,7 +364,7 @@ async function runCriticPass(
   return [reviewRun];
 }
 
-function createReviewOrder(config: YesChefConfig, menu: MenuRecord) {
+function createReviewOrder(config: YesChefConfig, menu: MenuRecord, targetOrder: ReturnType<typeof latestReviewTargetOrder>) {
   const now = new Date().toISOString();
   const agent = resolveAgentForRole(config, "critic");
   const orderId = createId("O");
@@ -336,7 +382,10 @@ function createReviewOrder(config: YesChefConfig, menu: MenuRecord) {
     repairForOrderId: null,
     sourceRunId: null,
     retryCount: 0,
-    failureContext: {},
+    failureContext: {
+      reviewTargetOrderId: targetOrder?.id ?? null,
+      reviewTargetTitle: targetOrder?.title ?? null,
+    },
     isolationStrategy: "in-place",
     isolationReason: "review default",
     profile: config.defaults.profile,
@@ -344,7 +393,7 @@ function createReviewOrder(config: YesChefConfig, menu: MenuRecord) {
     tools: agent.tools,
     permissions: agent.permissions,
     workspaceId: null,
-    dependsOn: [],
+    dependsOn: targetOrder ? [targetOrder.id] : [],
     packs: menu.requiredPacks,
     skills: ["review"],
     validationsRequired: [],
@@ -369,7 +418,10 @@ function createReviewOrder(config: YesChefConfig, menu: MenuRecord) {
     repairForOrderId: null,
     sourceRunId: null,
     retryCount: 0,
-    failureContext: {},
+    failureContext: {
+      reviewTargetOrderId: targetOrder?.id ?? null,
+      reviewTargetTitle: targetOrder?.title ?? null,
+    },
     isolationStrategy: workspacePlan.strategy,
     isolationReason: workspacePlan.reason,
     profile: config.defaults.profile,
@@ -377,7 +429,7 @@ function createReviewOrder(config: YesChefConfig, menu: MenuRecord) {
     tools: agent.tools,
     permissions: agent.permissions,
     workspaceId: null,
-    dependsOn: [],
+    dependsOn: targetOrder ? [targetOrder.id] : [],
     packs: menu.requiredPacks,
     skills: ["review"],
     validationsRequired: [],
@@ -395,4 +447,18 @@ function latestImplementationTimestamp(orders: ReturnType<typeof listOrdersByMen
     .map((order) => order.updatedAt)
     .sort()
     .at(-1) ?? "";
+}
+
+function latestReviewTargetOrder(orders: ReturnType<typeof listOrdersByMenu>) {
+  return [...orders]
+    .filter((order) => order.kind === "implement" || order.kind === "repair" || order.kind === "merge" || order.kind === "rules-update")
+    .sort((left, right) => left.updatedAt.localeCompare(right.updatedAt))
+    .at(-1) ?? null;
+}
+
+function artifactPathsForRun(db: Database, runId: string): { stdoutPath: string; stderrPath: string } {
+  const rows = db.query(`SELECT type, path FROM artifacts WHERE run_id = ?`).all(runId) as Array<{ type: string; path: string }>;
+  const stdoutPath = rows.find((row) => row.type === "stdout_log")?.path ?? "";
+  const stderrPath = rows.find((row) => row.type === "stderr_log")?.path ?? "";
+  return { stdoutPath, stderrPath };
 }

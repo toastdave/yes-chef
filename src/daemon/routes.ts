@@ -28,6 +28,15 @@ interface RunRow {
   updated_at: string;
 }
 
+interface ArtifactRow {
+  id: string;
+  run_id: string;
+  type: string;
+  path: string;
+  metadata_json: string;
+  created_at: string;
+}
+
 export interface DaemonContext {
   root: string;
   config: YesChefConfig;
@@ -118,7 +127,14 @@ export async function handleRequest(context: DaemonContext, request: Request): P
 
   if (parts[0] === "runs" && parts.length === 2 && request.method === "GET") {
     const run = context.db.query(`SELECT * FROM runs WHERE id = ?`).get(parts[1]) as RunRow | null;
-    return run ? json(run) : json({ error: "Run not found" }, 404);
+
+    if (!run) {
+      return json({ error: "Run not found" }, 404);
+    }
+
+    const order = getOrderById(context.db, run.order_id);
+    const artifacts = context.db.query(`SELECT * FROM artifacts WHERE run_id = ? ORDER BY created_at ASC`).all(parts[1]) as ArtifactRow[];
+    return json({ run, order, artifacts });
   }
 
   return json({ error: "Not found" }, 404);
