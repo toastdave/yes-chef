@@ -6,6 +6,7 @@ import { runProcess, writeProcessOutput } from "../../core/exec.ts";
 import { resolveRuntimePaths, writeTextFile } from "../../core/fs.ts";
 import type { MenuRecord, OrderRecord, WorkspaceRecord } from "../../core/models.ts";
 import type { EventBus } from "../../events/emit.ts";
+import type { KnowledgeContext } from "../../knowledge/context.ts";
 import { normalizeCodexSummary } from "../codex/normalize.ts";
 import { buildCodexPrompt } from "../codex/prompt.ts";
 
@@ -26,9 +27,10 @@ export async function runCliAdapter(options: {
   workspace: WorkspaceRecord;
   runId: string;
   bus: EventBus;
+  knowledge?: KnowledgeContext;
 }): Promise<AdapterRunResult> {
   const backend = resolveBackendConfig(options.config, options.order.backend);
-  const prompt = buildCodexPrompt(options.menu, options.order);
+  const prompt = buildCodexPrompt(options.menu, options.order, options.knowledge);
   const paths = resolveRuntimePaths(options.root);
   const stdoutPath = join(paths.artifactsDir, `${options.runId}-stdout.log`);
   const stderrPath = join(paths.artifactsDir, `${options.runId}-stderr.log`);

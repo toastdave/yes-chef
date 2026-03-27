@@ -48,6 +48,11 @@ export async function runLogsCommand(args: string[]): Promise<void> {
       console.log(`Failure context: ${failureContextPath}`);
     }
 
+    const knowledge = order.failureContext.knowledge as { results?: Array<{ path: string; title: string }> } | undefined;
+    if (knowledge?.results && knowledge.results.length > 0) {
+      console.log(`Knowledge refs: ${knowledge.results.map((result) => `${result.title} (${result.path})`).join(", ")}`);
+    }
+
     const reviewTarget = typeof order.failureContext.reviewTargetOrderId === "string" ? order.failureContext.reviewTargetOrderId : null;
     if (reviewTarget) {
       console.log(`Review target: ${reviewTarget}`);

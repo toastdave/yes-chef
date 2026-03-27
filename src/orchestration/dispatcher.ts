@@ -9,6 +9,8 @@ import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import type { ArtifactRecord, MenuRecord, OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
+import type { KnowledgeContext } from "../knowledge/context.ts";
+import { buildKnowledgeContextForOrder } from "../knowledge/context.ts";
 import { scheduleRepairOrder } from "./retry.ts";
 import { attachWorkspaceToOrder, updateOrderStatus } from "./orders.ts";
 import { ensureWorkspace } from "../workspaces/create.ts";
@@ -23,6 +25,7 @@ export async function dispatchOrder(options: {
   order: OrderRecord;
 }): Promise<RunRecord> {
   const workspace = await ensureWorkspace(options.db, options.root, options.config, options.order);
+  const knowledge = buildKnowledgeContextForOrder(options.db, options.menu, options.order);
   attachWorkspaceToOrder(options.db, options.order.id, workspace.id);
 
   await options.bus.emit({
@@ -115,6 +118,8 @@ export async function dispatchOrder(options: {
       model: options.order.model,
       mode: options.order.mode,
       backendAgent: options.order.backendAgent,
+      knowledgeHits: knowledge.results.length,
+      knowledgePaths: knowledge.results.map((result) => result.path),
     },
   });
 
@@ -126,6 +131,7 @@ export async function dispatchOrder(options: {
     workspace,
     runId,
     bus: options.bus,
+    knowledge,
   });
 
   const artifacts = [
@@ -224,6 +230,7 @@ async function dispatchToBackend(options: {
   workspace: WorkspaceRecord;
   runId: string;
   bus: EventBus;
+  knowledge: KnowledgeContext;
 }): Promise<AdapterRunResult> {
   switch (options.order.backend) {
     case "codex":

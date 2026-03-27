@@ -1,6 +1,7 @@
 import type { YesChefConfig } from "../../core/config.ts";
 import type { MenuRecord, OrderRecord, WorkspaceRecord } from "../../core/models.ts";
 import type { EventBus } from "../../events/emit.ts";
+import type { KnowledgeContext } from "../../knowledge/context.ts";
 import { runCliAdapter, type AdapterRunResult } from "../shared/run.ts";
 
 export async function runCodexAdapter(options: {
@@ -11,6 +12,7 @@ export async function runCodexAdapter(options: {
   workspace: WorkspaceRecord;
   runId: string;
   bus: EventBus;
+  knowledge?: KnowledgeContext;
 }): Promise<AdapterRunResult> {
   return runCliAdapter({
     ...options,

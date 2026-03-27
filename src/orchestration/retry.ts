@@ -7,6 +7,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { runShellCommand } from "../core/exec.ts";
 import { writeJsonFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
+import { buildKnowledgeContextForRepairTarget } from "../knowledge/context.ts";
 import type { OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
 
@@ -52,6 +53,7 @@ export async function scheduleRepairOrder(options: {
   }
 
   const context = await buildFailureContext({
+    db: options.db,
     root: options.root,
     failedOrder: options.failedOrder,
     failedRun: options.failedRun,
@@ -125,6 +127,7 @@ export async function scheduleRepairOrder(options: {
 }
 
 async function buildFailureContext(options: {
+  db: Database;
   root: string;
   failedOrder: OrderRecord;
   failedRun: RunRecord;
@@ -135,6 +138,7 @@ async function buildFailureContext(options: {
 }): Promise<Record<string, unknown>> {
   const gitStatus = await runShellCommand("git status --short", { cwd: options.workspace.path });
   const changedFiles = await runShellCommand("git diff --name-only", { cwd: options.workspace.path });
+  const knowledge = buildKnowledgeContextForRepairTarget(options.db, options.repairTargetOrder);
   const contextPath = join(options.root, ".yeschef", "artifacts", `${options.failedRun.id}-repair-context.json`);
   const context = {
     repairForOrderId: options.repairTargetOrder.id,
@@ -158,6 +162,10 @@ async function buildFailureContext(options: {
       title: options.repairTargetOrder.title,
       role: options.repairTargetOrder.role,
       agentId: options.repairTargetOrder.agentId,
+    },
+    knowledge: {
+      query: knowledge.query,
+      results: knowledge.results,
     },
     workspace: {
       path: options.workspace.path,

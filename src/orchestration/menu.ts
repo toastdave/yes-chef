@@ -6,6 +6,7 @@ import type { YesChefConfig } from "../core/config.ts";
 import { writeJsonFile, writeTextFile } from "../core/fs.ts";
 import { createId } from "../core/ids.ts";
 import type { CourseRecord, MenuRecord, OrderRecord } from "../core/models.ts";
+import type { KnowledgeContext } from "../knowledge/context.ts";
 import { parseJsonValue } from "../core/models.ts";
 import { resolveWorkspacePlan } from "../workspaces/create.ts";
 
@@ -29,9 +30,10 @@ interface MenuRow {
 export interface MenuBundle {
   menu: MenuRecord;
   orders: OrderRecord[];
+  knowledge?: KnowledgeContext;
 }
 
-export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle {
+export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?: KnowledgeContext): MenuBundle {
   const now = new Date().toISOString();
   const menuId = createId("M");
   const orderId = createId("O");
@@ -75,7 +77,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
     id: menuId,
     title: titleFromGoal(goal),
     objective: goal,
-    contextSummary: `Tonight's service targets: ${goal}`,
+    contextSummary: buildContextSummary(goal, knowledge),
     courses: [
       {
         id: courseId,
@@ -132,7 +134,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig): MenuBundle
     updatedAt: now,
   };
 
-  return { menu, orders: [order] };
+  return { menu, orders: [order], knowledge };
 }
 
 export function insertMenu(db: Database, menu: MenuRecord): void {
@@ -192,9 +194,9 @@ export async function persistMenuArtifacts(root: string, bundle: MenuBundle): Pr
   const menuDir = join(root, ".yeschef", "menus", bundle.menu.id);
 
   await Promise.all([
-    writeTextFile(join(menuDir, "menu.md"), renderMenuMarkdown(bundle.menu, bundle.orders)),
+    writeTextFile(join(menuDir, "menu.md"), renderMenuMarkdown(bundle.menu, bundle.orders, bundle.knowledge)),
     writeJsonFile(join(menuDir, "menu.json"), bundle.menu),
-    writeTextFile(join(menuDir, "plan.md"), renderPlanMarkdown(bundle.menu, bundle.orders)),
+    writeTextFile(join(menuDir, "plan.md"), renderPlanMarkdown(bundle.menu, bundle.orders, bundle.knowledge)),
     writeJsonFile(join(menuDir, "orders.json"), bundle.orders),
   ]);
 }
@@ -218,7 +220,7 @@ function mapMenuRow(row: MenuRow): MenuRecord {
   };
 }
 
-function renderMenuMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
+function renderMenuMarkdown(menu: MenuRecord, orders: OrderRecord[], knowledge?: KnowledgeContext): string {
   return [
     `# Menu for the Evening: ${menu.title}`,
     "",
@@ -233,16 +235,30 @@ function renderMenuMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
     "## Orders",
     ...orders.map((order) => `- ${order.id} (${order.role}, ${order.agentId}, ${order.backend}, ${order.kind}): ${order.title}`),
     "",
+    ...(knowledge && knowledge.results.length > 0
+      ? [
+          "## Relevant Knowledge",
+          ...knowledge.results.map((result) => `- ${result.title} [${result.sourceType}] ${result.path}`),
+          "",
+        ]
+      : []),
     "## Validations",
     ...menu.validations.map((validation) => `- ${validation}`),
     "",
   ].join("\n");
 }
 
-function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
+function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[], knowledge?: KnowledgeContext): string {
   return [
     `# Plan: ${menu.title}`,
     "",
+    ...(knowledge && knowledge.results.length > 0
+      ? [
+          "## Grounding",
+          ...knowledge.results.map((result) => `- ${result.title} (${result.path})`),
+          "",
+        ]
+      : []),
     ...orders.map(
       (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Isolation: ${order.isolationStrategy} (${order.isolationReason})\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
     ),
@@ -252,4 +268,13 @@ function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[]): string {
 
 function titleFromGoal(goal: string): string {
   return goal.length > 72 ? `${goal.slice(0, 69)}...` : goal;
+}
+
+function buildContextSummary(goal: string, knowledge?: KnowledgeContext): string {
+  if (!knowledge || knowledge.results.length === 0) {
+    return `Tonight's service targets: ${goal}`;
+  }
+
+  const references = knowledge.results.map((result) => result.path).join(", ");
+  return `Tonight's service targets: ${goal}. Relevant local references: ${references}.`;
 }
