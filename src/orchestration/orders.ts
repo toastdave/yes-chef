@@ -101,6 +101,14 @@ export function updateOrderStatus(db: Database, orderId: string, status: OrderRe
   db.query(`UPDATE orders SET status = ?, updated_at = ? WHERE id = ?`).run(status, new Date().toISOString(), orderId);
 }
 
+export function updateOrderFailureContext(db: Database, orderId: string, failureContext: Record<string, unknown>): void {
+  db.query(`UPDATE orders SET failure_context_json = ?, updated_at = ? WHERE id = ?`).run(
+    JSON.stringify(failureContext),
+    new Date().toISOString(),
+    orderId,
+  );
+}
+
 export function refreshOrderRunContext(db: Database, orderId: string): void {
   db.query(`UPDATE orders SET updated_at = ? WHERE id = ?`).run(new Date().toISOString(), orderId);
 }

@@ -37,7 +37,7 @@ The scaffold now supports minimal policy controls in config.
 - `policies.completion.conventionalCommits`: reserve a place for conventional-commit gating in later pass flows
 
 `yeschef pass` now uses those policies to run deterministic validation gates and, when review is required by the active mode, dispatch a Critic review order through the configured agent/backend.
-When Critic fails, Yes Chef can now hand that failure back into the repair loop so the next implementation order carries reviewer context instead of only raw harness logs.
+When Critic fails, Yes Chef now classifies the review failure, looks up related state and knowledge, and hands that guidance back into the repair loop so the next implementation order carries reviewer context instead of only raw harness logs.
 
 ## Knowledge
 

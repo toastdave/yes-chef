@@ -3,7 +3,7 @@ import type { Database } from "bun:sqlite";
 import { resolveAgentForRole } from "../core/agents.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
-import type { MenuRecord, RunRecord, ValidationRecord } from "../core/models.ts";
+import type { MenuRecord, OrderRecord, RunRecord, ValidationRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
 import { buildKnowledgeContextForGoal, buildKnowledgeContextForReview, inferKnowledgeSignals } from "../knowledge/context.ts";
 import { indexKnowledgeDocuments } from "../knowledge/index.ts";
@@ -11,11 +11,12 @@ import { resolveWorkspacePlan } from "../workspaces/create.ts";
 import { runMenuValidations } from "../validation/run-gates.ts";
 import { dispatchOrder } from "./dispatcher.ts";
 import { appendOrderToMenu, buildMenuBundle, getMenuById, insertMenu, listMenus, persistMenuArtifacts, updateMenuStatus } from "./menu.ts";
-import { insertOrder, listOrdersByKind, listOrdersByMenu, updateOrderStatus } from "./orders.ts";
+import { insertOrder, listOrdersByKind, listOrdersByMenu, updateOrderFailureContext, updateOrderStatus } from "./orders.ts";
 import { reconcileMenuStatus } from "./reconciler.ts";
 import { scheduleRepairOrder } from "./retry.ts";
 import { getNextRunnableOrders } from "./scheduler.ts";
 import { listWorkspaceRecords } from "../workspaces/status.ts";
+import { lookupStateAndKnowledge } from "../lookup/query.ts";
 
 export interface PrepResult {
   menu: MenuRecord;
@@ -349,6 +350,11 @@ async function runCriticPass(
   });
 
   if (reviewRun.status === "failed" && targetOrder) {
+    const assessment = assessReviewFailure(db, menu, reviewOrder, targetOrder, reviewRun, reviewKnowledge);
+    updateOrderFailureContext(db, reviewOrder.id, {
+      ...reviewOrder.failureContext,
+      reviewAssessment: assessment,
+    });
     const reviewWorkspace = listWorkspaceRecords(db).find((workspace) => workspace.orderId === reviewOrder.id) ?? null;
     const { stdoutPath, stderrPath } = artifactPathsForRun(db, reviewRun.id);
 
@@ -364,7 +370,10 @@ async function runCriticPass(
         workspace: reviewWorkspace,
         stdoutPath,
         stderrPath,
-        reason: "critic review requested implementation repair",
+        reason: assessment.repairReason,
+        handoff: {
+          reviewAssessment: assessment,
+        },
       });
     }
   }
@@ -375,7 +384,11 @@ async function runCriticPass(
     order_id: reviewOrder.id,
     run_id: reviewRun.id,
     role: reviewOrder.role,
-    payload: { status: reviewRun.status, summary: reviewRun.summary },
+    payload: {
+      status: reviewRun.status,
+      summary: reviewRun.summary,
+      reviewTargetOrderId: targetOrder?.id ?? null,
+    },
   });
 
   return [reviewRun];
@@ -487,4 +500,68 @@ function artifactPathsForRun(db: Database, runId: string): { stdoutPath: string;
   const stdoutPath = rows.find((row) => row.type === "stdout_log")?.path ?? "";
   const stderrPath = rows.find((row) => row.type === "stderr_log")?.path ?? "";
   return { stdoutPath, stderrPath };
+}
+
+function assessReviewFailure(
+  db: Database,
+  menu: MenuRecord,
+  reviewOrder: OrderRecord,
+  targetOrder: NonNullable<ReturnType<typeof latestReviewTargetOrder>>,
+  reviewRun: RunRecord,
+  reviewKnowledge: ReturnType<typeof buildKnowledgeContextForReview> | null,
+): {
+  category: string;
+  severity: "medium" | "high";
+  reason: string;
+  repairReason: string;
+  guidance: string[];
+  stateMatches: Array<{ kind: string; id: string; title: string }>;
+  knowledgeMatches: string[];
+} {
+  const summary = `${reviewRun.summary ?? ""} ${targetOrder.title} ${menu.objective} ${reviewOrder.title}`.toLowerCase();
+  const lookup = lookupStateAndKnowledge(db, `${targetOrder.title} ${reviewRun.summary ?? menu.objective}`, {
+    limit: 5,
+    sourceTypes: reviewKnowledge?.sourceTypes,
+  });
+
+  let category = "implementation-gap";
+  let severity: "medium" | "high" = "medium";
+  const guidance: string[] = [];
+
+  if (/(security|auth|secret|credential|permission)/.test(summary)) {
+    category = "security-risk";
+    severity = "high";
+    guidance.push("Review security-sensitive code paths, permissions, and any credential handling before re-running Critic.");
+  } else if (/(architecture|boundary|design|orchestrat|ownership)/.test(summary)) {
+    category = "architecture-fit";
+    severity = "high";
+    guidance.push("Repair the implementation to align with the intended architecture boundaries and orchestration ownership.");
+  } else if (/(policy|rule|agents|conventional|compliance)/.test(summary)) {
+    category = "policy-compliance";
+    severity = "high";
+    guidance.push("Update the implementation to follow repo rules, policy checks, and the expected workflow conventions.");
+  } else if (/(test|lint|type|validation|failing)/.test(summary)) {
+    category = "validation-gap";
+    guidance.push("Fix the implementation so validations and pass gates can succeed on the next attempt.");
+  } else {
+    guidance.push("Tighten the implementation based on reviewer feedback, then re-run validations and Critic.");
+  }
+
+  if ((reviewKnowledge?.results.length ?? 0) > 0) {
+    guidance.push(`Re-read the most relevant local references: ${reviewKnowledge!.results.map((result) => result.path).join(", ")}.`);
+  }
+
+  if (lookup.state.length > 0) {
+    guidance.push(`Cross-check related runtime state before repairing: ${lookup.state.map((result) => result.id).join(", ")}.`);
+  }
+
+  return {
+    category,
+    severity,
+    reason: `Critic flagged ${category.replaceAll("-", " ")} for ${targetOrder.title}.`,
+    repairReason: `critic review requested implementation repair (${category})`,
+    guidance,
+    stateMatches: lookup.state.map((result) => ({ kind: result.kind, id: result.id, title: result.title })),
+    knowledgeMatches: reviewKnowledge?.results.map((result) => result.path) ?? [],
+  };
 }

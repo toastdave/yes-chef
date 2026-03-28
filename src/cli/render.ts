@@ -37,10 +37,11 @@ function labelForOrder(order: OrderRecord): string {
 }
 
 function orderMeta(order: OrderRecord): string {
+  const reviewAssessment = order.failureContext.reviewAssessment as { category?: string } | undefined;
   const relation = order.kind === "repair"
-    ? ` repair-for ${order.repairForOrderId}`
+    ? ` repair-for ${order.repairForOrderId}${reviewAssessment?.category ? ` ${reviewAssessment.category}` : ""}`
     : order.kind === "review"
-      ? ` review${typeof order.failureContext.reviewTargetOrderId === "string" ? ` for ${order.failureContext.reviewTargetOrderId}` : ""}`
+      ? ` review${typeof order.failureContext.reviewTargetOrderId === "string" ? ` for ${order.failureContext.reviewTargetOrderId}` : ""}${reviewAssessment?.category ? ` ${reviewAssessment.category}` : ""}`
       : ` ${order.kind}`;
 
   return ` (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode}, retry ${order.retryCount},${relation})`;

@@ -53,6 +53,26 @@ export async function runLogsCommand(args: string[]): Promise<void> {
       console.log(`Knowledge refs: ${knowledge.results.map((result) => `${result.title} (${result.path})`).join(", ")}`);
     }
 
+    const reviewAssessment = order.failureContext.reviewAssessment as {
+      category?: string;
+      severity?: string;
+      guidance?: string[];
+      stateMatches?: Array<{ id: string }>;
+      knowledgeMatches?: string[];
+    } | undefined;
+    if (reviewAssessment?.category) {
+      console.log(`Review assessment: ${reviewAssessment.category} (${reviewAssessment.severity ?? "unknown"})`);
+      if (reviewAssessment.guidance && reviewAssessment.guidance.length > 0) {
+        console.log(`Review guidance: ${reviewAssessment.guidance.join(" | ")}`);
+      }
+      if (reviewAssessment.stateMatches && reviewAssessment.stateMatches.length > 0) {
+        console.log(`Review state refs: ${reviewAssessment.stateMatches.map((result) => result.id).join(", ")}`);
+      }
+      if (reviewAssessment.knowledgeMatches && reviewAssessment.knowledgeMatches.length > 0) {
+        console.log(`Review knowledge refs: ${reviewAssessment.knowledgeMatches.join(", ")}`);
+      }
+    }
+
     const reviewTarget = typeof order.failureContext.reviewTargetOrderId === "string" ? order.failureContext.reviewTargetOrderId : null;
     if (reviewTarget) {
       console.log(`Review target: ${reviewTarget}`);

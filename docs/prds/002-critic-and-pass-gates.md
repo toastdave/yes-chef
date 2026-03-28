@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, first-pass Critic review orders routed through configured agents, and basic repair handoff when review blocks shipping. Remaining work is richer review heuristics, browser-oriented gates, and more targeted repair context for reviewer feedback.
+Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, first-pass Critic review orders routed through configured agents, and repair handoff when review blocks shipping. The scaffold now also classifies review failures and carries targeted guidance into the repair loop. Remaining work is browser-oriented gates and deeper reviewer heuristics for higher-confidence triage.
 
 ## Problem
 

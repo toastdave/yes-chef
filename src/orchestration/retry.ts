@@ -23,6 +23,7 @@ export async function scheduleRepairOrder(options: {
   stderrPath: string;
   repairTargetOrder?: OrderRecord;
   reason?: string;
+  handoff?: Record<string, unknown>;
 }): Promise<OrderRecord | null> {
   const repairTarget = options.repairTargetOrder ?? options.failedOrder;
   const latestOrders = listOrdersByMenu(options.db, repairTarget.menuId);
@@ -61,6 +62,7 @@ export async function scheduleRepairOrder(options: {
     stdoutPath: options.stdoutPath,
     stderrPath: options.stderrPath,
     repairTargetOrder: repairTarget,
+    handoff: options.handoff,
   });
   const now = new Date().toISOString();
   const order: OrderRecord = {
@@ -135,6 +137,7 @@ async function buildFailureContext(options: {
   stdoutPath: string;
   stderrPath: string;
   repairTargetOrder: OrderRecord;
+  handoff?: Record<string, unknown>;
 }): Promise<Record<string, unknown>> {
   const gitStatus = await runShellCommand("git status --short", { cwd: options.workspace.path });
   const changedFiles = await runShellCommand("git diff --name-only", { cwd: options.workspace.path });
@@ -176,6 +179,7 @@ async function buildFailureContext(options: {
       baseRevision: options.workspace.baseRevision,
       branchName: options.workspace.branchName,
     },
+    handoff: options.handoff ?? {},
     contextPath,
   };
 
