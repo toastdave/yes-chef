@@ -71,6 +71,8 @@ export interface OrderRecord {
   dependsOn: string[];
   packs: string[];
   skills: string[];
+  routingReasons: string[];
+  knowledgeSources: string[];
   validationsRequired: string[];
   retryLimit: number;
   status: OrderStatus;
@@ -95,6 +97,7 @@ export interface RunRecord {
   exitCode: number | null;
   summary: string | null;
   artifactIds: string[];
+  routingContext: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }

@@ -47,6 +47,13 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - `yeschef prep` refreshes the index before creating a menu so planning has fresh local context available
 - implementation, review, and repair prompts now pull top local knowledge hits into their execution brief automatically
 
+## Skills And Packs
+
+- Yes Chef now resolves skills, packs, routing reasons, and knowledge sources per order
+- Built-in skills cover verification, debugging, worktree usage, frontend design, browser QA, and architecture review
+- Packs can add skills, validations, tools, and permissions as capability bundles
+- Routing stays explainable through order metadata, prompts, logs, and status output
+
 ## Custom agents
 
 Project and global config can define custom agents and map them to roles.

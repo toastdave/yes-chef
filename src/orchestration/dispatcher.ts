@@ -77,6 +77,12 @@ export async function dispatchOrder(options: {
     exitCode: null,
     summary: null,
     artifactIds: [],
+    routingContext: {
+      skills: options.order.skills,
+      packs: options.order.packs,
+      routingReasons: options.order.routingReasons,
+      knowledgeSources: options.order.knowledgeSources,
+    },
     createdAt: now,
     updatedAt: now,
   };
@@ -84,8 +90,8 @@ export async function dispatchOrder(options: {
   options.db.query(
     `INSERT INTO runs (
       id, order_id, role, agent_id, backend, model, mode, backend_agent, command, status, started_at,
-      ended_at, exit_code, summary, artifact_ids_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ended_at, exit_code, summary, artifact_ids_json, routing_context_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     run.id,
     run.orderId,
@@ -102,6 +108,7 @@ export async function dispatchOrder(options: {
     run.exitCode,
     run.summary,
     JSON.stringify(run.artifactIds),
+    JSON.stringify(run.routingContext),
     run.createdAt,
     run.updatedAt,
   );
@@ -120,6 +127,10 @@ export async function dispatchOrder(options: {
       backendAgent: options.order.backendAgent,
       knowledgeHits: knowledge.results.length,
       knowledgePaths: knowledge.results.map((result) => result.path),
+      skills: options.order.skills,
+      packs: options.order.packs,
+      routingReasons: options.order.routingReasons,
+      knowledgeSources: options.order.knowledgeSources,
     },
   });
 
@@ -191,6 +202,7 @@ export async function dispatchOrder(options: {
         exitCode: adapterResult.exitCode,
         summary: adapterResult.summary,
         artifactIds: artifacts.map((artifact) => artifact.id),
+        routingContext: run.routingContext,
         updatedAt: finishedAt,
       },
       workspace,
@@ -218,6 +230,7 @@ export async function dispatchOrder(options: {
     exitCode: adapterResult.exitCode,
     summary: adapterResult.summary,
     artifactIds: artifacts.map((artifact) => artifact.id),
+    routingContext: run.routingContext,
     updatedAt: finishedAt,
   };
 }

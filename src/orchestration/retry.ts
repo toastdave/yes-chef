@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 
+import { resolveAgent } from "../core/agents.ts";
 import { appendOrderToMenu } from "./menu.ts";
 import { insertOrder, listOrdersByMenu } from "./orders.ts";
 import type { YesChefConfig } from "../core/config.ts";
@@ -10,6 +11,7 @@ import { createId } from "../core/ids.ts";
 import { buildKnowledgeContextForRepairTarget, inferKnowledgeSignals } from "../knowledge/context.ts";
 import type { OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
+import { resolveOrderRouting } from "./routing.ts";
 
 export async function scheduleRepairOrder(options: {
   db: Database;
@@ -64,8 +66,22 @@ export async function scheduleRepairOrder(options: {
     repairTargetOrder: repairTarget,
     handoff: options.handoff,
   });
+  const knowledgeContext = context.knowledge as {
+    profile: string;
+    query: string;
+    sourceTypes: string[];
+    results: Array<{
+      id: string;
+      path: string;
+      sourceType: string;
+      title: string;
+      snippet: string;
+      rank: number;
+      updatedAt: string;
+    }>;
+  };
   const now = new Date().toISOString();
-  const order: OrderRecord = {
+  const baseOrder: OrderRecord = {
     ...repairTarget,
     id: createId("O"),
     title: options.failedOrder.kind === "review" ? `Repair ${repairTarget.title} after review` : `Repair ${repairTarget.title}`,
@@ -79,9 +95,50 @@ export async function scheduleRepairOrder(options: {
     workspaceId: null,
     dependsOn: [...repairTarget.dependsOn],
     skills: [...repairTarget.skills, options.failedOrder.kind === "review" ? "review-repair" : "repair"],
+    routingReasons: [],
+    knowledgeSources: [],
     status: "queued",
     createdAt: now,
     updatedAt: now,
+  };
+
+  const routing = resolveOrderRouting({
+    config: options.config,
+    menu: {
+      id: repairTarget.menuId,
+      title: repairTarget.title,
+      objective: repairTarget.title,
+      contextSummary: "repair flow",
+      courses: [],
+      dishes: [],
+      orders: [],
+      validations: repairTarget.validationsRequired,
+      risks: [],
+      requiredPacks: repairTarget.packs,
+      status: "running",
+      revision: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    order: baseOrder,
+    agent: resolveAgent(options.config, repairTarget.agentId),
+    knowledge: {
+      profile: knowledgeContext.profile,
+      query: knowledgeContext.query,
+      sourceTypes: knowledgeContext.sourceTypes,
+      results: knowledgeContext.results,
+    },
+  });
+
+  const order: OrderRecord = {
+    ...baseOrder,
+    packs: routing.packs,
+    skills: routing.skills,
+    routingReasons: routing.routingReasons,
+    knowledgeSources: routing.knowledgeSources,
+    validationsRequired: routing.validationsRequired,
+    tools: routing.tools,
+    permissions: routing.permissions,
   };
 
   insertOrder(options.db, order);

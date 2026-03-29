@@ -53,6 +53,8 @@ export interface ResolvedAgentConfig extends Omit<AgentConfig, "backend" | "mode
   prompt: string;
   mode: "managed" | "delegate";
   backendAgent: string | null;
+  skills: string[];
+  packs: string[];
   tools: Record<string, unknown>;
   permissions: Record<string, unknown>;
 }
@@ -104,6 +106,8 @@ export function resolveAgent(config: YesChefConfig, agentId: string): ResolvedAg
     prompt: inheritedValue(merged.prompt, merged.role),
     mode: merged.mode ?? "managed",
     backendAgent: merged.backendAgent ?? null,
+    skills: merged.skills ?? [],
+    packs: merged.packs ?? [],
     tools: merged.tools ?? {},
     permissions: merged.permissions ?? {},
   };

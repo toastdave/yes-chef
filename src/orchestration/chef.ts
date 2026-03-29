@@ -14,6 +14,7 @@ import { appendOrderToMenu, buildMenuBundle, getMenuById, insertMenu, listMenus,
 import { insertOrder, listOrdersByKind, listOrdersByMenu, updateOrderFailureContext, updateOrderStatus } from "./orders.ts";
 import { reconcileMenuStatus } from "./reconciler.ts";
 import { scheduleRepairOrder } from "./retry.ts";
+import { resolveOrderRouting } from "./routing.ts";
 import { getNextRunnableOrders } from "./scheduler.ts";
 import { listWorkspaceRecords } from "../workspaces/status.ts";
 import { lookupStateAndKnowledge } from "../lookup/query.ts";
@@ -430,10 +431,12 @@ function createReviewOrder(
     tools: agent.tools,
     permissions: agent.permissions,
     workspaceId: null,
-    dependsOn: targetOrder ? [targetOrder.id] : [],
-    packs: menu.requiredPacks,
-    skills: ["review"],
-    validationsRequired: [],
+      dependsOn: targetOrder ? [targetOrder.id] : [],
+      packs: menu.requiredPacks,
+      skills: ["review"],
+      routingReasons: [],
+      knowledgeSources: [],
+      validationsRequired: [],
     retryLimit: 1,
     status: "queued",
     priority: 100,
@@ -441,7 +444,7 @@ function createReviewOrder(
     updatedAt: now,
   });
 
-  return {
+  const baseOrder: OrderRecord = {
     id: orderId,
     menuId: menu.id,
     title: `Review ${menu.title}`,
@@ -471,12 +474,33 @@ function createReviewOrder(
     dependsOn: targetOrder ? [targetOrder.id] : [],
     packs: menu.requiredPacks,
     skills: ["review"],
+    routingReasons: [],
+    knowledgeSources: [],
     validationsRequired: [],
     retryLimit: 1,
     status: "queued" as const,
     priority: 100,
     createdAt: now,
     updatedAt: now,
+  };
+
+  const routing = resolveOrderRouting({
+    config,
+    menu,
+    order: baseOrder,
+    agent,
+    knowledge: knowledge ?? undefined,
+  });
+
+  return {
+    ...baseOrder,
+    packs: routing.packs,
+    skills: routing.skills,
+    routingReasons: routing.routingReasons,
+    knowledgeSources: routing.knowledgeSources,
+    validationsRequired: routing.validationsRequired,
+    tools: routing.tools,
+    permissions: routing.permissions,
   };
 }
 

@@ -19,6 +19,28 @@
   // "roleDefaults": {
   //   "line-cook": "custom-cook"
   // },
+  // "skills": {
+  //   "api-debugging": {
+  //     "summary": "Trace API failures systematically",
+  //     "requiredTools": ["bash", "read"]
+  //   }
+  // },
+  // "packs": {
+  //   "browser": {
+  //     "enabled": true,
+  //     "skills": ["browser-qa"],
+  //     "tools": { "browser": true }
+  //   }
+  // },
+  // "routing": {
+  //   "roleSkills": {
+  //     "line-cook": ["verification-before-completion"]
+  //   },
+  //   "kindSkills": {
+  //     "repair": ["systematic-debugging"]
+  //   },
+  //   "uiPackRoles": ["expo", "critic"]
+  // },
   "policies": {
     "worktrees": {
       "mode": "auto",

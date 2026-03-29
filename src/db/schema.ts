@@ -40,6 +40,8 @@ export const schemaStatements = [
     depends_on_json TEXT NOT NULL,
     packs_json TEXT NOT NULL,
     skills_json TEXT NOT NULL,
+    routing_reasons_json TEXT NOT NULL,
+    knowledge_sources_json TEXT NOT NULL,
     validations_required_json TEXT NOT NULL,
     retry_limit INTEGER NOT NULL,
     status TEXT NOT NULL,
@@ -63,6 +65,7 @@ export const schemaStatements = [
     exit_code INTEGER,
     summary TEXT,
     artifact_ids_json TEXT NOT NULL,
+    routing_context_json TEXT NOT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   )`,

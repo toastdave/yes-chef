@@ -28,6 +28,8 @@ interface OrderRow {
   depends_on_json: string;
   packs_json: string;
   skills_json: string;
+  routing_reasons_json: string;
+  knowledge_sources_json: string;
   validations_required_json: string;
   retry_limit: number;
   status: OrderRecord["status"];
@@ -42,8 +44,9 @@ export function insertOrder(db: Database, order: OrderRecord): void {
       id, menu_id, title, kind, role, agent_id, backend, model, mode, backend_agent,
       repair_for_order_id, source_run_id, retry_count, failure_context_json, isolation_strategy, isolation_reason,
       profile, prompt_template, tools_json, permissions_json, workspace_id, depends_on_json, packs_json,
-      skills_json, validations_required_json, retry_limit, status, priority, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      skills_json, routing_reasons_json, knowledge_sources_json, validations_required_json, retry_limit, status,
+      priority, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     order.id,
     order.menuId,
@@ -69,6 +72,8 @@ export function insertOrder(db: Database, order: OrderRecord): void {
     JSON.stringify(order.dependsOn),
     JSON.stringify(order.packs),
     JSON.stringify(order.skills),
+    JSON.stringify(order.routingReasons),
+    JSON.stringify(order.knowledgeSources),
     JSON.stringify(order.validationsRequired),
     order.retryLimit,
     order.status,
@@ -156,6 +161,8 @@ function mapOrderRow(row: OrderRow): OrderRecord {
     dependsOn: parseJsonValue<string[]>(row.depends_on_json, []),
     packs: parseJsonValue<string[]>(row.packs_json, []),
     skills: parseJsonValue<string[]>(row.skills_json, []),
+    routingReasons: parseJsonValue<string[]>(row.routing_reasons_json, []),
+    knowledgeSources: parseJsonValue<string[]>(row.knowledge_sources_json, []),
     validationsRequired: parseJsonValue<string[]>(row.validations_required_json, []),
     retryLimit: row.retry_limit,
     status: row.status,

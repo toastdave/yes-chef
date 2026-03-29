@@ -26,10 +26,36 @@ export interface AgentConfig {
   backend?: string;
   model?: string;
   prompt?: string;
+  skills?: string[];
+  packs?: string[];
   tools?: Record<string, unknown>;
   permissions?: Record<string, unknown>;
   backendAgent?: string;
   mode?: "managed" | "delegate";
+}
+
+export interface SkillConfig {
+  summary: string;
+  whenToUse?: string[];
+  requiredTools?: string[];
+  relatedStacks?: string[];
+  checklist?: string[];
+}
+
+export interface PackConfig {
+  enabled: boolean;
+  description?: string;
+  skills?: string[];
+  validations?: string[];
+  tools?: Record<string, unknown>;
+  permissions?: Record<string, unknown>;
+  whenToUse?: string[];
+}
+
+export interface RoutingConfig {
+  roleSkills: Partial<Record<RoleName, string[]>>;
+  kindSkills: Partial<Record<import("./models.ts").OrderKind, string[]>>;
+  uiPackRoles: RoleName[];
 }
 
 interface LegacyRoleConfig {
@@ -76,11 +102,13 @@ export interface YesChefConfig {
   };
   backends: Record<string, BackendConfig>;
   agents: Record<string, AgentConfig>;
+  skills: Record<string, SkillConfig>;
   roleDefaults: Record<RoleName, string>;
   modes: Record<string, ModeConfig>;
   policies: PoliciesConfig;
   validations: Record<string, string>;
-  packs: Record<string, { enabled: boolean }>;
+  packs: Record<string, PackConfig>;
+  routing: RoutingConfig;
   ui: {
     theme: string;
     streamMode: string;
@@ -129,6 +157,57 @@ const builtinBackends: Record<string, BackendConfig> = {
   },
 };
 
+const builtinSkills: Record<string, SkillConfig> = {
+  "verification-before-completion": {
+    summary: "Check acceptance criteria and required validations before declaring work complete.",
+    whenToUse: ["finalizing implementation", "pre-pass review"],
+    requiredTools: ["bash"],
+    checklist: ["Re-check acceptance criteria", "Run required validations", "Summarize completion clearly"],
+  },
+  "systematic-debugging": {
+    summary: "Use failing signals, related state, and scoped fixes when repairing work.",
+    whenToUse: ["repair orders", "failing validations", "runtime failures"],
+    requiredTools: ["bash", "read"],
+    checklist: ["Inspect failure output", "Confirm changed files", "Make the smallest targeted fix"],
+  },
+  "worktree-usage": {
+    summary: "Use isolated worktrees for write-heavy and repair flows.",
+    whenToUse: ["write-capable orders", "repair orders"],
+    requiredTools: ["bash"],
+    checklist: ["Use isolated workspace", "Preserve base revision", "Clean up per policy"],
+  },
+  "browser-qa": {
+    summary: "Run browser-oriented validation for UI work when the browser pack is enabled.",
+    whenToUse: ["UI validation", "frontend review"],
+    checklist: ["Open the target flow", "Verify visible state", "Capture findings"],
+  },
+  "frontend-design": {
+    summary: "Keep frontend work intentional, responsive, and aligned with the existing visual language.",
+    whenToUse: ["UI implementation", "frontend polish"],
+    checklist: ["Respect local style", "Check desktop and mobile", "Avoid generic UI"],
+  },
+  "architecture-review": {
+    summary: "Review architecture boundaries, ownership, and policy fit separately from shell validations.",
+    whenToUse: ["critic review", "architecture-sensitive changes"],
+    checklist: ["Check ownership boundaries", "Check policy fit", "Call out risky areas"],
+  },
+};
+
+const builtinRouting: RoutingConfig = {
+  roleSkills: {
+    chef: ["verification-before-completion"],
+    "sous-chef": ["verification-before-completion"],
+    "line-cook": ["verification-before-completion"],
+    expo: ["verification-before-completion"],
+    critic: ["architecture-review"],
+  },
+  kindSkills: {
+    repair: ["systematic-debugging"],
+    review: ["architecture-review"],
+  },
+  uiPackRoles: ["expo", "critic"],
+};
+
 function createDefaultConfig(root: string): YesChefConfig {
   return {
     $schema: CONFIG_SCHEMA_URL,
@@ -149,33 +228,39 @@ function createDefaultConfig(root: string): YesChefConfig {
         role: "chef",
         description: "Owns orchestration, menu revisions, and final service decisions.",
         prompt: "chef",
+        skills: ["verification-before-completion"],
         mode: "managed",
       },
       "sous-chef": {
         role: "sous-chef",
         description: "Plans scope, acceptance criteria, and tonight's menu.",
         prompt: "planner",
+        skills: ["verification-before-completion"],
         mode: "managed",
       },
       "line-cook": {
         role: "line-cook",
         description: "Implements scoped code changes for an order.",
         prompt: "implementer",
+        skills: ["verification-before-completion"],
         mode: "managed",
       },
       expo: {
         role: "expo",
         description: "Runs deterministic validation gates and reports pass or fail.",
         prompt: "validator",
+        skills: ["verification-before-completion"],
         mode: "managed",
       },
       critic: {
         role: "critic",
         description: "Reviews diffs and architecture fit before the pass.",
         prompt: "reviewer",
+        skills: ["architecture-review"],
         mode: "managed",
       },
     },
+    skills: structuredClone(builtinSkills),
     roleDefaults: { ...defaultRoleDefaults },
     modes: {
       safe: { maxRetries: 2, requireReview: true, requireBrowserForUi: false },
@@ -194,10 +279,16 @@ function createDefaultConfig(root: string): YesChefConfig {
     },
     validations: {
       typecheck: "bun run typecheck",
-      },
-    packs: {
-      browser: { enabled: false },
     },
+    packs: {
+      browser: {
+        enabled: false,
+        description: "Browser-oriented capability bundle for UI validation and review.",
+        skills: ["browser-qa"],
+        tools: { browser: true },
+      },
+    },
+    routing: structuredClone(builtinRouting),
     ui: {
       theme: "yes-chef",
       streamMode: "events",

@@ -2,7 +2,7 @@
 
 ## Status
 
-Not started. The scaffold already stores prompt names, validations, and boolean packs, but it does not yet have a real registry for skills, capability bundles, or routing decisions.
+Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, and persisted routing reasons on orders and runs. Remaining work is deeper project overlays, richer routing heuristics, and more advanced pack activation behavior.
 
 ## Problem
 

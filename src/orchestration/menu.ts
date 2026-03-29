@@ -8,6 +8,7 @@ import { createId } from "../core/ids.ts";
 import type { CourseRecord, MenuRecord, OrderRecord } from "../core/models.ts";
 import { inferKnowledgeSignals, type KnowledgeContext } from "../knowledge/context.ts";
 import { parseJsonValue } from "../core/models.ts";
+import { resolveOrderRouting } from "./routing.ts";
 import { resolveWorkspacePlan } from "../workspaces/create.ts";
 
 interface MenuRow {
@@ -65,6 +66,8 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     dependsOn: [],
     packs: [],
     skills: [],
+    routingReasons: [],
+    knowledgeSources: [],
     validationsRequired: [],
     retryLimit: config.modes[config.defaults.mode]?.maxRetries ?? 0,
     status: "queued",
@@ -101,7 +104,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     updatedAt: now,
   };
 
-  const order: OrderRecord = {
+  const baseOrder: OrderRecord = {
     id: orderId,
     menuId,
     title: `Implement ${goal}`,
@@ -126,12 +129,33 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     dependsOn: [],
     packs: menu.requiredPacks,
     skills: [],
+    routingReasons: [],
+    knowledgeSources: [],
     validationsRequired: menu.validations,
     retryLimit: config.modes[config.defaults.mode]?.maxRetries ?? 0,
     status: "queued",
     priority: 1,
     createdAt: now,
     updatedAt: now,
+  };
+
+  const routing = resolveOrderRouting({
+    config,
+    menu,
+    order: baseOrder,
+    agent,
+    knowledge,
+  });
+
+  const order: OrderRecord = {
+    ...baseOrder,
+    packs: routing.packs,
+    skills: routing.skills,
+    routingReasons: routing.routingReasons,
+    knowledgeSources: routing.knowledgeSources,
+    validationsRequired: routing.validationsRequired,
+    tools: routing.tools,
+    permissions: routing.permissions,
   };
 
   return { menu, orders: [order], knowledge };
@@ -260,7 +284,7 @@ function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[], knowledge?:
         ]
       : []),
     ...orders.map(
-      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Isolation: ${order.isolationStrategy} (${order.isolationReason})\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
+      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Isolation: ${order.isolationStrategy} (${order.isolationReason})\n   - Skills: ${order.skills.join(", ") || "none"}\n   - Packs: ${order.packs.join(", ") || "none"}\n   - Routing: ${order.routingReasons.join("; ") || "default"}\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
     ),
     "",
   ].join("\n");

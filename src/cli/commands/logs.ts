@@ -39,6 +39,15 @@ export async function runLogsCommand(args: string[]): Promise<void> {
   if (order) {
     console.log(`Order: ${order.id} ${order.kind} ${order.title}`);
     console.log(`Agent: ${order.agentId}`);
+    if (order.skills.length > 0) {
+      console.log(`Skills: ${order.skills.join(", ")}`);
+    }
+    if (order.packs.length > 0) {
+      console.log(`Packs: ${order.packs.join(", ")}`);
+    }
+    if (order.routingReasons.length > 0) {
+      console.log(`Routing: ${order.routingReasons.join(" | ")}`);
+    }
     if (order.repairForOrderId) {
       console.log(`Repairs: ${order.repairForOrderId} via ${order.sourceRunId ?? "unknown run"}`);
     }
