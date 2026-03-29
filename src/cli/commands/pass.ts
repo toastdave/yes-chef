@@ -8,6 +8,8 @@ interface PassResponse {
   gates: {
     executionReady: boolean;
     validationsPassed: boolean;
+    browserRequired: boolean;
+    browserReady: boolean;
     reviewRequired: boolean;
     reviewPassed: boolean;
     conventionalCommitReady: boolean;
@@ -29,7 +31,7 @@ export async function runPassCommand(args: string[]): Promise<void> {
   console.log(`Status: ${result.menu.status}`);
   console.log(`Validations: ${result.validations.map((validation) => `${validation.name}=${validation.status}`).join(", ")}`);
   console.log(
-    `Gates: execution=${result.gates.executionReady}, validations=${result.gates.validationsPassed}, review=${result.gates.reviewPassed}, conventional=${result.gates.conventionalCommitReady}`,
+    `Gates: execution=${result.gates.executionReady}, validations=${result.gates.validationsPassed}, browser=${result.gates.browserReady}${result.gates.browserRequired ? " (required)" : ""}, review=${result.gates.reviewPassed}, conventional=${result.gates.conventionalCommitReady}`,
   );
   if (result.reviews.length > 0) {
     console.log(`Reviews: ${result.reviews.map((review) => `${review.id}=${review.status}`).join(", ")}`);

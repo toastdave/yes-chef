@@ -27,6 +27,7 @@ export interface ResolvedPackBinding {
   env: Record<string, string>;
   skills: string[];
   validations: string[];
+  validationCommands: Record<string, string>;
 }
 
 export function resolveOrderRouting(options: {
@@ -158,6 +159,7 @@ export function resolvePackBindings(config: YesChefConfig, packIds: string[]): R
         env: pack.env ?? {},
         skills: pack.skills ?? [],
         validations: pack.validations ?? [],
+        validationCommands: pack.validationCommands ?? {},
       };
     })
     .filter((binding): binding is ResolvedPackBinding => binding !== null);

@@ -36,6 +36,8 @@ export interface PassResult {
   gates: {
     executionReady: boolean;
     validationsPassed: boolean;
+    browserRequired: boolean;
+    browserReady: boolean;
     reviewRequired: boolean;
     reviewPassed: boolean;
     conventionalCommitReady: boolean;
@@ -197,13 +199,24 @@ export async function passMenu(options: {
     throw new Error(`Unknown menu: ${options.menuId}`);
   }
 
+  const orders = listOrdersByMenu(options.db, menu.id);
+  const uiWorkDetected = detectUiWork(menu, orders);
+  const browserRequired = uiWorkDetected && (options.config.modes[options.config.defaults.mode]?.requireBrowserForUi ?? false);
+  const browserValidationCommands = uiWorkDetected ? resolvePackValidationCommands(options.config, ["browser"]) : {};
+  const browserValidationPackMap = Object.fromEntries(Object.keys(browserValidationCommands).map((name) => [name, ["browser"]]));
+  const browserReady = !browserRequired || (options.config.packs.browser?.enabled === true && Object.keys(browserValidationCommands).length > 0);
+
   const validations = await runMenuValidations({
     db: options.db,
     root: options.root,
     config: options.config,
     bus: options.bus,
     menu,
-    extraValidations: buildCompletionValidations(options.config),
+    extraValidations: {
+      ...buildCompletionValidations(options.config),
+      ...browserValidationCommands,
+    },
+    validationPackMap: browserValidationPackMap,
   });
 
   const validationRequired = options.config.policies.completion.requireValidations;
@@ -213,9 +226,9 @@ export async function passMenu(options: {
   const reviewRequired = mode?.requireReview ?? false;
   const conventionalCommitReady = !options.config.policies.completion.conventionalCommits
     || validations.some((validation) => validation.name === "conventional-commit" && validation.status === "passed");
-  const reviews = allPassed && executionReady && reviewRequired ? await runCriticPass(options.db, options.root, options.config, options.bus, menu) : [];
+  const reviews = allPassed && executionReady && browserReady && reviewRequired ? await runCriticPass(options.db, options.root, options.config, options.bus, menu) : [];
   const reviewPassed = !reviewRequired || reviews.every((review) => review.status === "completed");
-  const status: MenuRecord["status"] = allPassed && executionReady && reviewPassed && conventionalCommitReady
+  const status: MenuRecord["status"] = allPassed && executionReady && browserReady && reviewPassed && conventionalCommitReady
     ? (reviewRequired ? "ready" : "completed")
     : "blocked";
   updateMenuStatus(options.db, menu.id, status);
@@ -245,6 +258,8 @@ export async function passMenu(options: {
     gates: {
       executionReady,
       validationsPassed: allPassed,
+      browserRequired,
+      browserReady,
       reviewRequired,
       reviewPassed,
       conventionalCommitReady,
@@ -276,6 +291,35 @@ function buildCompletionValidations(config: YesChefConfig): Record<string, strin
     "conventional-commit":
       "msg=$(git log -1 --pretty=%s 2>/dev/null) && printf '%s\\n' \"$msg\" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\([^)]+\\))?!?: .+'",
   };
+}
+
+function detectUiWork(menu: MenuRecord, orders: OrderRecord[]): boolean {
+  const text = `${menu.objective} ${menu.title} ${orders.map((order) => `${order.title} ${order.skills.join(" ")} ${order.packs.join(" ")}`).join(" ")}`.toLowerCase();
+  return /(ui|frontend|browser|page|screen|component|design)/.test(text);
+}
+
+function resolvePackValidationCommands(config: YesChefConfig, packIds: string[]): Record<string, string> {
+  const commands: Record<string, string> = {};
+
+  for (const packId of packIds) {
+    const pack = config.packs[packId];
+    if (!pack || pack.enabled === false) {
+      continue;
+    }
+
+    for (const validation of pack.validations ?? []) {
+      const command = config.validations[validation];
+      if (command) {
+        commands[validation] = command;
+      }
+    }
+
+    for (const [name, command] of Object.entries(pack.validationCommands ?? {})) {
+      commands[name] = command;
+    }
+  }
+
+  return commands;
 }
 
 async function runCriticPass(

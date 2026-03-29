@@ -47,6 +47,7 @@ export interface PackConfig {
   description?: string;
   skills?: string[];
   validations?: string[];
+  validationCommands?: Record<string, string>;
   env?: Record<string, string>;
   tools?: Record<string, unknown>;
   permissions?: Record<string, unknown>;
@@ -302,6 +303,9 @@ function createDefaultConfig(root: string): YesChefConfig {
         enabled: false,
         description: "Browser-oriented capability bundle for UI validation and review.",
         skills: ["browser-qa"],
+        validationCommands: {
+          "browser-check": "printf 'browser pack placeholder: no browser harness configured\\n'",
+        },
         env: { YESCHEF_BROWSER_PACK: "1" },
         tools: { browser: true },
       },

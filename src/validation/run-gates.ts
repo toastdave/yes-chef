@@ -16,6 +16,7 @@ export async function runMenuValidations(options: {
   bus: EventBus;
   menu: MenuRecord;
   extraValidations?: Record<string, string>;
+  validationPackMap?: Record<string, string[]>;
 }): Promise<ValidationRecord[]> {
   const results: ValidationRecord[] = [];
   const paths = resolveRuntimePaths(options.root);
@@ -59,7 +60,13 @@ export async function runMenuValidations(options: {
     await options.bus.emit({
       type: "validation.started",
       menu_id: options.menu.id,
-      payload: { validationId: validation.id, name, command, agentId: expoAgent.id },
+      payload: {
+        validationId: validation.id,
+        name,
+        command,
+        agentId: expoAgent.id,
+        packs: options.validationPackMap?.[name] ?? [],
+      },
       role: "expo",
     });
 
@@ -79,7 +86,14 @@ export async function runMenuValidations(options: {
     await options.bus.emit({
       type: status === "passed" ? "validation.passed" : "validation.failed",
       menu_id: options.menu.id,
-      payload: { validationId: validation.id, name, outputPath, exitCode: result.exitCode, agentId: expoAgent.id },
+      payload: {
+        validationId: validation.id,
+        name,
+        outputPath,
+        exitCode: result.exitCode,
+        agentId: expoAgent.id,
+        packs: options.validationPackMap?.[name] ?? [],
+      },
       role: "expo",
     });
 
