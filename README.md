@@ -52,7 +52,8 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - Yes Chef now resolves skills, packs, routing reasons, and knowledge sources per order
 - Built-in skills cover verification, debugging, worktree usage, frontend design, browser QA, and architecture review
 - Packs can add skills, validations, tools, and permissions as capability bundles
-- Routing stays explainable through order metadata, prompts, logs, and status output
+- Routing stays explainable through order metadata, prompts, logs, status output, and per-run routing trace artifacts
+- Pack-aware execution now reaches the adapter layer through env vars and command placeholders like `{packs}`, `{skills}`, `{routing_reasons}`, and `{knowledge_sources}`
 
 ## Custom agents
 

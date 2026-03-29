@@ -13,6 +13,14 @@ export interface ResolvedRouting {
   knowledgeSources: string[];
 }
 
+export interface ResolvedPackBinding {
+  id: string;
+  description: string | null;
+  env: Record<string, string>;
+  skills: string[];
+  validations: string[];
+}
+
 export function resolveOrderRouting(options: {
   config: YesChefConfig;
   menu: MenuRecord;
@@ -95,6 +103,26 @@ export function resolveOrderRouting(options: {
     routingReasons,
     knowledgeSources,
   };
+}
+
+export function resolvePackBindings(config: YesChefConfig, packIds: string[]): ResolvedPackBinding[] {
+  return packIds
+    .map((packId) => {
+      const pack = config.packs[packId];
+
+      if (!pack || pack.enabled === false) {
+        return null;
+      }
+
+      return {
+        id: packId,
+        description: pack.description ?? null,
+        env: pack.env ?? {},
+        skills: pack.skills ?? [],
+        validations: pack.validations ?? [],
+      };
+    })
+    .filter((binding): binding is ResolvedPackBinding => binding !== null);
 }
 
 function applyPack(

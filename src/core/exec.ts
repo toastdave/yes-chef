@@ -9,6 +9,7 @@ export interface ProcessRunOptions {
   cmd: string[];
   cwd?: string;
   stdin?: string;
+  env?: Record<string, string | undefined>;
   onStdoutChunk?: (chunk: string) => void | Promise<void>;
   onStderrChunk?: (chunk: string) => void | Promise<void>;
 }
@@ -56,7 +57,7 @@ export async function runProcess(options: ProcessRunOptions): Promise<ProcessRun
       stdin: options.stdin ? "pipe" : undefined,
       stdout: "pipe",
       stderr: "pipe",
-      env: process.env,
+      env: { ...process.env, ...(options.env ?? {}) },
     });
 
     if (options.stdin && proc.stdin) {

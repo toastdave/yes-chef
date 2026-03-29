@@ -47,6 +47,7 @@ export interface PackConfig {
   description?: string;
   skills?: string[];
   validations?: string[];
+  env?: Record<string, string>;
   tools?: Record<string, unknown>;
   permissions?: Record<string, unknown>;
   whenToUse?: string[];
@@ -285,6 +286,7 @@ function createDefaultConfig(root: string): YesChefConfig {
         enabled: false,
         description: "Browser-oriented capability bundle for UI validation and review.",
         skills: ["browser-qa"],
+        env: { YESCHEF_BROWSER_PACK: "1" },
         tools: { browser: true },
       },
     },

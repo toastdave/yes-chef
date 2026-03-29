@@ -29,6 +29,7 @@
   //   "browser": {
   //     "enabled": true,
   //     "skills": ["browser-qa"],
+  //     "env": { "YESCHEF_BROWSER_PACK": "1" },
   //     "tools": { "browser": true }
   //   }
   // },

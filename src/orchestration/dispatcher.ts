@@ -7,10 +7,12 @@ import { runOpenCodeAdapter } from "../adapters/opencode/run.ts";
 import type { AdapterRunResult } from "../adapters/shared/run.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
+import { writeJsonFile } from "../core/fs.ts";
 import type { ArtifactRecord, MenuRecord, OrderRecord, RunRecord, WorkspaceRecord } from "../core/models.ts";
 import type { EventBus } from "../events/emit.ts";
 import type { KnowledgeContext } from "../knowledge/context.ts";
 import { buildKnowledgeContextForOrder } from "../knowledge/context.ts";
+import { resolvePackBindings } from "./routing.ts";
 import { scheduleRepairOrder } from "./retry.ts";
 import { attachWorkspaceToOrder, updateOrderStatus } from "./orders.ts";
 import { ensureWorkspace } from "../workspaces/create.ts";
@@ -26,6 +28,7 @@ export async function dispatchOrder(options: {
 }): Promise<RunRecord> {
   const workspace = await ensureWorkspace(options.db, options.root, options.config, options.order);
   const knowledge = buildKnowledgeContextForOrder(options.db, options.menu, options.order);
+  const packBindings = resolvePackBindings(options.config, options.order.packs);
   attachWorkspaceToOrder(options.db, options.order.id, workspace.id);
 
   await options.bus.emit({
@@ -145,9 +148,25 @@ export async function dispatchOrder(options: {
     knowledge,
   });
 
+  const routingTracePath = `${options.root}/.yeschef/artifacts/${run.id}-routing.json`;
+  await writeJsonFile(routingTracePath, {
+    runId: run.id,
+    orderId: options.order.id,
+    agentId: options.order.agentId,
+    backend: options.order.backend,
+    mode: options.order.mode,
+    skills: options.order.skills,
+    packs: options.order.packs,
+    routingReasons: options.order.routingReasons,
+    knowledgeSources: options.order.knowledgeSources,
+    packBindings,
+    knowledge,
+  });
+
   const artifacts = [
     createArtifactRecord(run.id, "stdout_log", adapterResult.stdoutPath),
     createArtifactRecord(run.id, "stderr_log", adapterResult.stderrPath),
+    createArtifactRecord(run.id, "trace", routingTracePath),
   ];
 
   for (const artifact of artifacts) {

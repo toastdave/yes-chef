@@ -48,6 +48,9 @@ export async function runLogsCommand(args: string[]): Promise<void> {
     if (order.routingReasons.length > 0) {
       console.log(`Routing: ${order.routingReasons.join(" | ")}`);
     }
+    if (order.knowledgeSources.length > 0) {
+      console.log(`Knowledge sources: ${order.knowledgeSources.join(", ")}`);
+    }
     if (order.repairForOrderId) {
       console.log(`Repairs: ${order.repairForOrderId} via ${order.sourceRunId ?? "unknown run"}`);
     }
