@@ -73,6 +73,7 @@ export interface OrderRecord {
   skills: string[];
   routingReasons: string[];
   knowledgeSources: string[];
+  overlayContext: Record<string, unknown>;
   validationsRequired: string[];
   retryLimit: number;
   status: OrderStatus;

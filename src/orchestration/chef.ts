@@ -72,6 +72,10 @@ export async function prepMenu(options: {
       knowledgeProfile: knowledgeContext.profile,
       knowledgeMatches: knowledgeContext.results.map((result) => result.path),
       knowledgeSignals: inferKnowledgeSignals(knowledgeContext),
+      overlays: {
+        dangerousPaths: options.config.overlays.dangerousPaths,
+        acceptanceCriteria: options.config.overlays.acceptanceCriteria,
+      },
     },
   });
 
@@ -88,6 +92,9 @@ export async function prepMenu(options: {
         mode: order.mode,
         retryCount: order.retryCount,
         isolationStrategy: order.isolationStrategy,
+        skills: order.skills,
+        packs: order.packs,
+        routingReasons: order.routingReasons,
       },
     });
 
@@ -96,7 +103,15 @@ export async function prepMenu(options: {
       menu_id: bundle.menu.id,
       order_id: order.id,
       role: order.role,
-      payload: { backend: order.backend, model: order.model, agentId: order.agentId, backendAgent: order.backendAgent },
+      payload: {
+        backend: order.backend,
+        model: order.model,
+        agentId: order.agentId,
+        backendAgent: order.backendAgent,
+        skills: order.skills,
+        packs: order.packs,
+        knowledgeSources: order.knowledgeSources,
+      },
     });
   }
 
@@ -302,6 +317,8 @@ async function runCriticPass(
         agentId: reviewOrder.agentId,
         reviewTargetOrderId: targetOrder?.id ?? null,
         knowledgeProfile: reviewKnowledge?.profile ?? null,
+        skills: reviewOrder.skills,
+        packs: reviewOrder.packs,
       },
     });
 
@@ -316,6 +333,8 @@ async function runCriticPass(
         agentId: reviewOrder.agentId,
         reviewTargetOrderId: targetOrder?.id ?? null,
         knowledgePaths: reviewKnowledge?.results.map((result) => result.path) ?? [],
+        skills: reviewOrder.skills,
+        packs: reviewOrder.packs,
       },
     });
   }
@@ -436,6 +455,7 @@ function createReviewOrder(
       skills: ["review"],
       routingReasons: [],
       knowledgeSources: [],
+      overlayContext: {},
       validationsRequired: [],
     retryLimit: 1,
     status: "queued",
@@ -476,6 +496,7 @@ function createReviewOrder(
     skills: ["review"],
     routingReasons: [],
     knowledgeSources: [],
+    overlayContext: {},
     validationsRequired: [],
     retryLimit: 1,
     status: "queued" as const,
@@ -498,6 +519,7 @@ function createReviewOrder(
     skills: routing.skills,
     routingReasons: routing.routingReasons,
     knowledgeSources: routing.knowledgeSources,
+    overlayContext: routing.overlayContext,
     validationsRequired: routing.validationsRequired,
     tools: routing.tools,
     permissions: routing.permissions,

@@ -19,6 +19,7 @@ const additiveColumns: Array<{ table: string; column: string; definition: string
   { table: "orders", column: "permissions_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
   { table: "orders", column: "routing_reasons_json", definition: "TEXT NOT NULL DEFAULT '[]'" },
   { table: "orders", column: "knowledge_sources_json", definition: "TEXT NOT NULL DEFAULT '[]'" },
+  { table: "orders", column: "overlay_context_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
   { table: "runs", column: "agent_id", definition: "TEXT NOT NULL DEFAULT 'line-cook'" },
   { table: "runs", column: "mode", definition: "TEXT NOT NULL DEFAULT 'managed'" },
   { table: "runs", column: "backend_agent", definition: "TEXT" },

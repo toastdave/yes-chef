@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, and pack-aware adapter invocation via env and trace artifacts. Remaining work is deeper project overlays, richer routing heuristics, and more advanced pack activation behavior.
+Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, and first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria. Remaining work is richer routing heuristics and more advanced pack activation behavior.
 
 ## Problem
 

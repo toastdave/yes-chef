@@ -51,6 +51,14 @@ export async function runLogsCommand(args: string[]): Promise<void> {
     if (order.knowledgeSources.length > 0) {
       console.log(`Knowledge sources: ${order.knowledgeSources.join(", ")}`);
     }
+    const dangerousPaths = order.overlayContext.matchedDangerousPaths;
+    if (Array.isArray(dangerousPaths) && dangerousPaths.length > 0) {
+      console.log(`Dangerous paths: ${dangerousPaths.join(", ")}`);
+    }
+    const acceptanceCriteria = order.overlayContext.acceptanceCriteria;
+    if (Array.isArray(acceptanceCriteria) && acceptanceCriteria.length > 0) {
+      console.log(`Acceptance criteria: ${acceptanceCriteria.join(" | ")}`);
+    }
     if (order.repairForOrderId) {
       console.log(`Repairs: ${order.repairForOrderId} via ${order.sourceRunId ?? "unknown run"}`);
     }

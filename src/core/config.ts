@@ -59,6 +59,14 @@ export interface RoutingConfig {
   uiPackRoles: RoleName[];
 }
 
+export interface OverlayConfig {
+  repoMap: string[];
+  architectureNotes: string[];
+  commands: Record<string, string>;
+  dangerousPaths: string[];
+  acceptanceCriteria: string[];
+}
+
 interface LegacyRoleConfig {
   backend: string;
   model: string;
@@ -106,6 +114,7 @@ export interface YesChefConfig {
   skills: Record<string, SkillConfig>;
   roleDefaults: Record<RoleName, string>;
   modes: Record<string, ModeConfig>;
+  overlays: OverlayConfig;
   policies: PoliciesConfig;
   validations: Record<string, string>;
   packs: Record<string, PackConfig>;
@@ -266,6 +275,13 @@ function createDefaultConfig(root: string): YesChefConfig {
     modes: {
       safe: { maxRetries: 2, requireReview: true, requireBrowserForUi: false },
     },
+    overlays: {
+      repoMap: [],
+      architectureNotes: [],
+      commands: {},
+      dangerousPaths: [],
+      acceptanceCriteria: [],
+    },
     policies: {
       worktrees: {
         mode: "auto",
@@ -316,8 +332,8 @@ export async function loadConfigWithMeta(root = process.cwd()): Promise<LoadedCo
       continue;
     }
 
-    mergeInto(config as unknown as Record<string, unknown>, layer as Record<string, unknown>);
-    sources.push(source);
+      mergeInto(config as unknown as Record<string, unknown>, layer as Record<string, unknown>);
+      sources.push(source);
   }
 
   return { config, sources };

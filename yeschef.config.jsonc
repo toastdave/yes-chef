@@ -42,6 +42,13 @@
   //   },
   //   "uiPackRoles": ["expo", "critic"]
   // },
+  // "overlays": {
+  //   "repoMap": ["src/orchestration", "src/validation"],
+  //   "architectureNotes": ["Keep orchestration state Yes Chef-owned"],
+  //   "commands": { "smoke": "bun run typecheck" },
+  //   "dangerousPaths": ["src/orchestration", "src/db"],
+  //   "acceptanceCriteria": ["Keep event protocol stable", "Preserve resumable state"]
+  // },
   "policies": {
     "worktrees": {
       "mode": "auto",

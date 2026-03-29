@@ -1,5 +1,5 @@
 import type { ResolvedAgentConfig } from "../core/agents.ts";
-import type { PackConfig, SkillConfig, YesChefConfig } from "../core/config.ts";
+import type { OverlayConfig, PackConfig, SkillConfig, YesChefConfig } from "../core/config.ts";
 import type { MenuRecord, OrderRecord } from "../core/models.ts";
 import { inferKnowledgeSignals, type KnowledgeContext } from "../knowledge/context.ts";
 
@@ -11,6 +11,14 @@ export interface ResolvedRouting {
   permissions: Record<string, unknown>;
   routingReasons: string[];
   knowledgeSources: string[];
+  overlayContext: {
+    repoMap: string[];
+    architectureNotes: string[];
+    commands: Record<string, string>;
+    dangerousPaths: string[];
+    matchedDangerousPaths: string[];
+    acceptanceCriteria: string[];
+  };
 }
 
 export interface ResolvedPackBinding {
@@ -37,8 +45,10 @@ export function resolveOrderRouting(options: {
   const permissions = deepMerge({}, options.order.permissions);
   deepMerge(permissions, options.agent.permissions);
   const knowledgeSignals = inferKnowledgeSignals(options.knowledge ?? { profile: "none", query: "", sourceTypes: [], results: [] });
+  const knowledgeSources = options.knowledge?.results.map((result) => result.path) ?? [];
   const textSignals = `${options.menu.objective} ${options.order.title}`.toLowerCase();
   const uiSignals = /(ui|frontend|browser|page|screen|component|design)/.test(textSignals);
+  const overlayContext = buildOverlayContext(options.config.overlays, textSignals, knowledgeSources);
 
   for (const skill of options.config.routing.roleSkills[options.order.role] ?? []) {
     if (!skillSet.has(skill)) {
@@ -76,6 +86,22 @@ export function resolveOrderRouting(options: {
     routingReasons.push("knowledge signals add skill verification-before-completion");
   }
 
+  if (overlayContext.acceptanceCriteria.length > 0 && !skillSet.has("verification-before-completion")) {
+    skillSet.add("verification-before-completion");
+    routingReasons.push("overlay acceptance criteria add skill verification-before-completion");
+  }
+
+  if (overlayContext.matchedDangerousPaths.length > 0) {
+    if (!skillSet.has("architecture-review")) {
+      skillSet.add("architecture-review");
+    }
+    routingReasons.push(`dangerous paths matched: ${overlayContext.matchedDangerousPaths.join(", ")}`);
+  }
+
+  if ((overlayContext.repoMap.length > 0 || overlayContext.architectureNotes.length > 0) && options.order.role === "critic") {
+    routingReasons.push("overlay repo map and architecture notes inform critic review");
+  }
+
   for (const packId of [...packSet]) {
     const pack = options.config.packs[packId];
     if (!pack || pack.enabled === false) {
@@ -87,8 +113,6 @@ export function resolveOrderRouting(options: {
   }
 
   const configuredSkills = [...skillSet].filter((skillId) => Boolean(options.config.skills[skillId]));
-  const knowledgeSources = options.knowledge?.results.map((result) => result.path) ?? [];
-
   for (const skillId of configuredSkills) {
     const skill = options.config.skills[skillId];
     applySkill(skillId, skill, tools, routingReasons);
@@ -102,6 +126,20 @@ export function resolveOrderRouting(options: {
     permissions,
     routingReasons,
     knowledgeSources,
+    overlayContext,
+  };
+}
+
+function buildOverlayContext(overlays: OverlayConfig, textSignals: string, knowledgeSources: string[]) {
+  const matchedDangerousPaths = overlays.dangerousPaths.filter((dangerousPath) => pathMatchesSignals(dangerousPath, textSignals, knowledgeSources));
+
+  return {
+    repoMap: overlays.repoMap,
+    architectureNotes: overlays.architectureNotes,
+    commands: overlays.commands,
+    dangerousPaths: overlays.dangerousPaths,
+    matchedDangerousPaths,
+    acceptanceCriteria: overlays.acceptanceCriteria,
   };
 }
 
@@ -181,4 +219,15 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function pathMatchesSignals(path: string, textSignals: string, knowledgeSources: string[]): boolean {
+  const normalizedPath = path.toLowerCase();
+
+  if (knowledgeSources.some((source) => source.toLowerCase().includes(normalizedPath))) {
+    return true;
+  }
+
+  const pathTokens = normalizedPath.split(/[^a-z0-9]+/).filter((token) => token.length > 2);
+  return pathTokens.some((token) => textSignals.includes(token));
 }

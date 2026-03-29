@@ -68,6 +68,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     skills: [],
     routingReasons: [],
     knowledgeSources: [],
+    overlayContext: {},
     validationsRequired: [],
     retryLimit: config.modes[config.defaults.mode]?.maxRetries ?? 0,
     status: "queued",
@@ -131,6 +132,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     skills: [],
     routingReasons: [],
     knowledgeSources: [],
+    overlayContext: {},
     validationsRequired: menu.validations,
     retryLimit: config.modes[config.defaults.mode]?.maxRetries ?? 0,
     status: "queued",
@@ -153,6 +155,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     skills: routing.skills,
     routingReasons: routing.routingReasons,
     knowledgeSources: routing.knowledgeSources,
+    overlayContext: routing.overlayContext,
     validationsRequired: routing.validationsRequired,
     tools: routing.tools,
     permissions: routing.permissions,
@@ -284,7 +287,7 @@ function renderPlanMarkdown(menu: MenuRecord, orders: OrderRecord[], knowledge?:
         ]
       : []),
     ...orders.map(
-      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Isolation: ${order.isolationStrategy} (${order.isolationReason})\n   - Skills: ${order.skills.join(", ") || "none"}\n   - Packs: ${order.packs.join(", ") || "none"}\n   - Routing: ${order.routingReasons.join("; ") || "default"}\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
+      (order, index) => `${index + 1}. ${order.title}\n   - Role: ${order.role}\n   - Agent: ${order.agentId}\n   - Backend: ${order.backend}\n   - Model: ${order.model}\n   - Mode: ${order.mode}${order.backendAgent ? ` (${order.backendAgent})` : ""}\n   - Isolation: ${order.isolationStrategy} (${order.isolationReason})\n   - Skills: ${order.skills.join(", ") || "none"}\n   - Packs: ${order.packs.join(", ") || "none"}\n   - Routing: ${order.routingReasons.join("; ") || "default"}\n   - Dangerous Paths: ${formatOverlayList(order.overlayContext, "matchedDangerousPaths")}\n   - Acceptance: ${formatOverlayList(order.overlayContext, "acceptanceCriteria")}\n   - Tools: ${Object.keys(order.tools).join(", ") || "inherit"}\n   - Validations: ${order.validationsRequired.join(", ") || "none"}`,
     ),
     "",
   ].join("\n");
@@ -324,4 +327,9 @@ function buildMenuRisks(knowledge?: KnowledgeContext): string[] {
   }
 
   return risks;
+}
+
+function formatOverlayList(context: Record<string, unknown>, key: string): string {
+  const value = context[key];
+  return Array.isArray(value) && value.length > 0 ? value.join(", ") : "none";
 }

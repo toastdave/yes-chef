@@ -54,6 +54,7 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - Packs can add skills, validations, tools, and permissions as capability bundles
 - Routing stays explainable through order metadata, prompts, logs, status output, and per-run routing trace artifacts
 - Pack-aware execution now reaches the adapter layer through env vars and command placeholders like `{packs}`, `{skills}`, `{routing_reasons}`, and `{knowledge_sources}`
+- Project overlays can now contribute repo maps, dangerous paths, acceptance criteria, architecture notes, and recommended commands to routing and prompts
 
 ## Custom agents
 

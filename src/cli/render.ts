@@ -38,7 +38,10 @@ function labelForOrder(order: OrderRecord): string {
 
 function orderMeta(order: OrderRecord): string {
   const reviewAssessment = order.failureContext.reviewAssessment as { category?: string } | undefined;
-  const capability = `${order.skills.length > 0 ? ` skills:${order.skills.join("+")}` : ""}${order.packs.length > 0 ? ` packs:${order.packs.join("+")}` : ""}${order.knowledgeSources.length > 0 ? ` knowledge:${order.knowledgeSources.length}` : ""}`;
+  const dangerousPaths = Array.isArray(order.overlayContext.matchedDangerousPaths)
+    ? order.overlayContext.matchedDangerousPaths.length
+    : 0;
+  const capability = `${order.skills.length > 0 ? ` skills:${order.skills.join("+")}` : ""}${order.packs.length > 0 ? ` packs:${order.packs.join("+")}` : ""}${order.knowledgeSources.length > 0 ? ` knowledge:${order.knowledgeSources.length}` : ""}${dangerousPaths > 0 ? ` risky:${dangerousPaths}` : ""}`;
   const relation = order.kind === "repair"
     ? ` repair-for ${order.repairForOrderId}${reviewAssessment?.category ? ` ${reviewAssessment.category}` : ""}`
     : order.kind === "review"

@@ -134,6 +134,9 @@ export async function dispatchOrder(options: {
       packs: options.order.packs,
       routingReasons: options.order.routingReasons,
       knowledgeSources: options.order.knowledgeSources,
+      dangerousPaths: Array.isArray(options.order.overlayContext.matchedDangerousPaths)
+        ? options.order.overlayContext.matchedDangerousPaths
+        : [],
     },
   });
 
@@ -160,6 +163,7 @@ export async function dispatchOrder(options: {
     routingReasons: options.order.routingReasons,
     knowledgeSources: options.order.knowledgeSources,
     packBindings,
+    overlayContext: options.order.overlayContext,
     knowledge,
   });
 

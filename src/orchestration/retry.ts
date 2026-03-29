@@ -97,6 +97,7 @@ export async function scheduleRepairOrder(options: {
     skills: [...repairTarget.skills, options.failedOrder.kind === "review" ? "review-repair" : "repair"],
     routingReasons: [],
     knowledgeSources: [],
+    overlayContext: {},
     status: "queued",
     createdAt: now,
     updatedAt: now,
@@ -136,6 +137,7 @@ export async function scheduleRepairOrder(options: {
     skills: routing.skills,
     routingReasons: routing.routingReasons,
     knowledgeSources: routing.knowledgeSources,
+    overlayContext: routing.overlayContext,
     validationsRequired: routing.validationsRequired,
     tools: routing.tools,
     permissions: routing.permissions,
@@ -155,6 +157,8 @@ export async function scheduleRepairOrder(options: {
         agentId: order.agentId,
         repairForOrderId: order.repairForOrderId,
         triggerOrderId: options.failedOrder.id,
+        skills: order.skills,
+        packs: order.packs,
       },
     });
 
@@ -163,7 +167,13 @@ export async function scheduleRepairOrder(options: {
     menu_id: order.menuId,
     order_id: order.id,
       role: order.role,
-      payload: { backend: order.backend, model: order.model, retryCount: order.retryCount, triggerOrderKind: options.failedOrder.kind },
+      payload: {
+        backend: order.backend,
+        model: order.model,
+        retryCount: order.retryCount,
+        triggerOrderKind: options.failedOrder.kind,
+        routingReasons: order.routingReasons,
+      },
     });
 
   await options.bus.emit({
