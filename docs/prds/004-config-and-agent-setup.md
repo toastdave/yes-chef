@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, and role-to-agent mapping now exist. Remaining work is richer authoring and validation plus new first-class concepts for policies, skills, packs, routing, and project knowledge.
+Core foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, role-to-agent mapping, policies, skills, packs, routing hints, and project overlays now exist. Remaining work is richer config validation, stronger authoring ergonomics, and optional markdown-driven authoring for prompts or skills.
 
 ## Problem
 

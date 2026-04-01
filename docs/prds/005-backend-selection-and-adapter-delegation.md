@@ -2,7 +2,7 @@
 
 ## Status
 
-Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, and delegate mode is represented in persisted state. Remaining work is backend-specific invocation polish, stronger capability contracts, and deeper native-agent integrations.
+Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, delegate mode is represented in persisted state, and pack-aware adapter invocation reaches the backend through env, placeholders, and routing trace artifacts. Remaining work is backend-specific invocation polish, stronger capability contracts, and deeper native-agent integrations.
 
 ## Problem
 

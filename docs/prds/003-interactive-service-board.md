@@ -1,5 +1,9 @@
 # PRD 003: Interactive Service Board
 
+## Status
+
+Not started as a dedicated TUI. The scaffold already exposes compact `status`, `logs`, `lookup`, routing traces, and SSE events, but it does not yet provide a full-screen interactive service board.
+
 ## Problem
 
 The default CLI should stay compact, but operators will want a richer live board for active menus, orders, validations, and logs.

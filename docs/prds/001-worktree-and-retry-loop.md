@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. Policy-driven worktree selection, isolated git worktree creation, workspace cleanup behavior, and first-pass repair-order scheduling now exist in the scaffold. Remaining work is deeper policy tuning, richer retry context, and cleaner operator UX around retries and workspace inspection.
+Core groundwork implemented. Policy-driven worktree selection, isolated git worktree creation, workspace cleanup behavior, repair-order scheduling, and retry lineage persistence now exist in the scaffold. Remaining work is richer retry context, smarter duplicate suppression and escalation, and cleaner operator UX around retries and workspace inspection.
 
 ## Problem
 
