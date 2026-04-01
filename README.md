@@ -56,6 +56,7 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - Pack-aware execution now reaches the adapter layer through env vars and command placeholders like `{packs}`, `{skills}`, `{routing_reasons}`, and `{knowledge_sources}`
 - Project overlays can now contribute repo maps, dangerous paths, acceptance criteria, architecture notes, and recommended commands to routing and prompts
 - When `requireBrowserForUi` is enabled, UI-shaped work will route browser-pack validations into Expo and block pass if the browser pack cannot satisfy them
+- Validation commands now receive `YESCHEF_VALIDATION_ARTIFACT_DIR`, `YESCHEF_VALIDATION_OUTPUT_PATH`, and `YESCHEF_VALIDATION_SUMMARY_PATH`; browser validations are expected to write screenshots or traces there so pass can persist structured Expo artifacts
 
 ## Custom agents
 

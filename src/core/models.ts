@@ -20,6 +20,25 @@ export type ArtifactType =
   | "summary"
   | "rules_patch";
 
+export type ValidationArtifactType = Extract<ArtifactType, "validation_output" | "screenshot" | "trace" | "summary">;
+
+export interface ValidationArtifactRecord {
+  type: ValidationArtifactType;
+  path: string;
+  label: string;
+}
+
+export interface ValidationSummary {
+  exitCode: number;
+  failureCategory: "none" | "missing-browser-artifacts" | "harness-error" | "app-regression";
+  packs: string[];
+  artifactCount: number;
+  screenshotCount: number;
+  traceCount: number;
+  findings: string[];
+  notes: string[];
+}
+
 export interface CourseRecord {
   id: string;
   menuId: string;
@@ -137,6 +156,8 @@ export interface ValidationRecord {
   command: string;
   status: ValidationStatus;
   outputPath: string | null;
+  artifacts: ValidationArtifactRecord[];
+  summary: ValidationSummary | null;
   startedAt: string;
   endedAt: string | null;
 }

@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, Critic review orders routed through configured agents, review-failure classification, repair handoff when review blocks shipping, and browser-pack-aware pass gating for UI work. The next implementation step is replacing placeholder browser gating with real browser or Expo execution, durable validation artifacts, and structured failure reporting. After that, remaining work is deeper reviewer heuristics for higher-confidence triage.
+Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, Critic review orders routed through configured agents, review-failure classification, repair handoff when review blocks shipping, and browser-pack-aware pass gating for UI work. Browser validations now get dedicated artifact directories, structured summary output, and failure classification for missing coverage, harness failures, and app regressions. Remaining work is wiring stronger default browser harness commands and deeper reviewer heuristics for higher-confidence triage.
 
 ## Problem
 
@@ -35,3 +35,4 @@ Introduce a deterministic pass pipeline that combines validation gates, optional
 - Critic should review architecture fit, risky diffs, and policy compliance separately from shell validations.
 - Browser validation should stay deterministic and shell-command-based even when adapters use different underlying browser harnesses.
 - Browser artifacts should live under `.yeschef/` and be referenced from SQLite like other validation outputs.
+- Browser validation commands should use `YESCHEF_VALIDATION_ARTIFACT_DIR` and `YESCHEF_VALIDATION_SUMMARY_PATH` so Expo can persist screenshots, traces, and structured findings consistently.

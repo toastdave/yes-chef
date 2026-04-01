@@ -102,6 +102,8 @@ export const schemaStatements = [
     command TEXT NOT NULL,
     status TEXT NOT NULL,
     output_path TEXT,
+    artifacts_json TEXT NOT NULL DEFAULT '[]',
+    summary_json TEXT,
     started_at TEXT NOT NULL,
     ended_at TEXT
   )`,

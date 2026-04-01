@@ -24,6 +24,8 @@ const additiveColumns: Array<{ table: string; column: string; definition: string
   { table: "runs", column: "mode", definition: "TEXT NOT NULL DEFAULT 'managed'" },
   { table: "runs", column: "backend_agent", definition: "TEXT" },
   { table: "runs", column: "routing_context_json", definition: "TEXT NOT NULL DEFAULT '{}'" },
+  { table: "validations", column: "artifacts_json", definition: "TEXT NOT NULL DEFAULT '[]'" },
+  { table: "validations", column: "summary_json", definition: "TEXT" },
   { table: "workspaces", column: "base_revision", definition: "TEXT NOT NULL DEFAULT ''" },
   { table: "workspaces", column: "strategy", definition: "TEXT NOT NULL DEFAULT 'in-place'" },
   { table: "workspaces", column: "cleanup_status", definition: "TEXT NOT NULL DEFAULT 'kept'" },

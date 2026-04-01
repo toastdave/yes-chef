@@ -304,7 +304,7 @@ function createDefaultConfig(root: string): YesChefConfig {
         description: "Browser-oriented capability bundle for UI validation and review.",
         skills: ["browser-qa"],
         validationCommands: {
-          "browser-check": "printf 'browser pack placeholder: no browser harness configured\\n'",
+          "browser-check": "printf 'configure packs.browser.validationCommands.browser-check to run your browser harness and write screenshots or traces under %s\\n' \"$YESCHEF_VALIDATION_ARTIFACT_DIR\" >&2; exit 2",
         },
         env: { YESCHEF_BROWSER_PACK: "1" },
         tools: { browser: true },

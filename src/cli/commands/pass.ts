@@ -29,7 +29,9 @@ export async function runPassCommand(args: string[]): Promise<void> {
 
   console.log(`Pass checked for ${result.menu.id}`);
   console.log(`Status: ${result.menu.status}`);
-  console.log(`Validations: ${result.validations.map((validation) => `${validation.name}=${validation.status}`).join(", ")}`);
+  console.log(
+    `Validations: ${result.validations.map((validation) => `${validation.name}=${validation.status}${validation.summary ? ` (${validation.summary.failureCategory}, artifacts=${validation.summary.artifactCount})` : ""}`).join(", ")}`,
+  );
   console.log(
     `Gates: execution=${result.gates.executionReady}, validations=${result.gates.validationsPassed}, browser=${result.gates.browserReady}${result.gates.browserRequired ? " (required)" : ""}, review=${result.gates.reviewPassed}, conventional=${result.gates.conventionalCommitReady}`,
   );
