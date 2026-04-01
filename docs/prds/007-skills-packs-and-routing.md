@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria, and browser-pack-aware pass gating for UI work. Remaining work is richer routing heuristics, more advanced pack activation behavior, and stronger adapter-specific capability hooks.
+Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria, and browser-pack-aware pass gating for UI work. The next implementation step is richer routing heuristics driven by explicit backend capability data and better retrieval quality. After that, remaining work is more advanced pack activation behavior and adapter-specific polish.
 
 ## Problem
 
@@ -17,6 +17,7 @@ Introduce first-class skills, richer packs, and explicit routing logic so Yes Ch
 - Skills are modeled as reusable procedural guidance with metadata such as summary, when-to-use rules, required tools, related stacks, and completion checklists.
 - Packs evolve from booleans into capability bundles that can attach multiple skills, validations, and tool requirements to an order.
 - Routing can combine task shape, repo signals, project overlays, and backend capability data when resolving an order.
+- Routing reasons should cite task shape, repo signals, retrieved knowledge, and backend capabilities separately so operators can tell what moved a decision.
 - Built-in roles stay stable (`chef`, `sous-chef`, `line-cook`, `expo`, `critic`) while specialization mostly lives in skills and packs.
 - Global skills can cover workflows like verification-before-completion, systematic debugging, worktree usage, browser QA, and frontend design.
 - Project-scoped overlays can attach repo maps, architecture notes, commands, dangerous paths, and acceptance criteria without polluting global defaults.
@@ -34,3 +35,4 @@ Introduce first-class skills, richer packs, and explicit routing logic so Yes Ch
 - Treat policies as mandatory rules, skills as workflows, and packs as convenience bundles that can compose both.
 - Routing should be explainable in logs and artifacts so operators can see why a given skill set or backend was chosen.
 - Browser automation should usually be routed to Expo or future tester-oriented flows instead of every write-capable order.
+- Capability reporting and retrieval quality should land before routing grows more opaque so heuristics stay explainable and testable.

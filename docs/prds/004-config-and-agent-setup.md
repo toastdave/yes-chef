@@ -2,7 +2,7 @@
 
 ## Status
 
-Core foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, role-to-agent mapping, policies, skills, packs, routing hints, and project overlays now exist. Remaining work is richer config validation, stronger authoring ergonomics, and optional markdown-driven authoring for prompts or skills.
+Core foundation implemented in the scaffold. Merged config loading, built-in agent defaults, global setup, role-to-agent mapping, policies, skills, packs, routing hints, and project overlays now exist. Remaining work is richer config validation, stronger authoring ergonomics, and optional markdown-driven authoring for prompts or skills. Planning and menu ergonomics should tighten once capability-aware routing and validation policies settle so config can describe the same execution model the runtime enforces.
 
 ## Problem
 
@@ -24,6 +24,7 @@ Add an OpenCode-style configuration system for Yes Chef with built-in agents, gl
 - Config can define global policies such as validation-before-completion, worktree requirements, and commit conventions separately from agent prompts.
 - Config can declare skills, packs, routing hints, and project knowledge sources without forcing those concerns into every agent definition.
 - Project config can supply architecture maps, repo commands, dangerous paths, and acceptance criteria as project-scoped overlays rather than global defaults.
+- Menu planning should be able to express more than a single implementation order when policies, review context, or risky domains call for safer sequencing.
 
 ## Non-goals
 
@@ -38,4 +39,4 @@ Add an OpenCode-style configuration system for Yes Chef with built-in agents, gl
 - Treat Yes Chef agents as the stable user-facing abstraction and backend-native agents as adapter details.
 - `yeschef doctor` should explain both raw availability and effective resolved defaults.
 - Keep role definitions small and stable; most specialization should live in skills, packs, and project overlays.
-- Remaining follow-up work should focus on config validation, richer examples, and optional markdown-based authoring for prompts or skills if still desired.
+- Remaining follow-up work should focus on config validation, richer examples, planning ergonomics, and optional markdown-based authoring for prompts or skills if still desired.

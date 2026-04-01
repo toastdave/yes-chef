@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, Critic review orders routed through configured agents, review-failure classification, repair handoff when review blocks shipping, and browser-pack-aware pass gating for UI work. Remaining work is richer browser validation artifacts and deeper reviewer heuristics for higher-confidence triage.
+Foundation in progress. Pass flow now supports policy-driven completion checks, optional conventional-commit gating, Critic review orders routed through configured agents, review-failure classification, repair handoff when review blocks shipping, and browser-pack-aware pass gating for UI work. The next implementation step is replacing placeholder browser gating with real browser or Expo execution, durable validation artifacts, and structured failure reporting. After that, remaining work is deeper reviewer heuristics for higher-confidence triage.
 
 ## Problem
 
@@ -18,7 +18,9 @@ Introduce a deterministic pass pipeline that combines validation gates, optional
 - Menus end in `completed`, `blocked`, or `approval-required` with clear reasons.
 - Review outputs become first-class artifacts and events.
 - Expo and Critic execution should resolve through the configured Yes Chef agents, not hardcoded backends.
+- Browser validation can run a real shell-command-driven Expo or tester flow and persist artifacts such as screenshots, traces, and structured findings.
 - Validation policies can require browser verification for UI work, stronger review for risky domains, and conventional-commit readiness checks before completion.
+- Validation failures should distinguish missing browser coverage, harness failures, and app regressions so repair loops get actionable context.
 - Completion criteria should be explicit and machine-checkable so builder behavior can be enforced by Expo instead of buried in prompts.
 
 ## Non-goals
@@ -31,3 +33,5 @@ Introduce a deterministic pass pipeline that combines validation gates, optional
 - Pass flow should respect agent-level permissions and backend overrides from the merged config.
 - Browser-based validation should be attached to Expo or a future tester role, not enabled for every write-capable agent by default.
 - Critic should review architecture fit, risky diffs, and policy compliance separately from shell validations.
+- Browser validation should stay deterministic and shell-command-based even when adapters use different underlying browser harnesses.
+- Browser artifacts should live under `.yeschef/` and be referenced from SQLite like other validation outputs.
