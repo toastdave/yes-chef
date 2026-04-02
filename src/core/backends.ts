@@ -29,6 +29,20 @@ export interface BackendResolution {
   reason: string;
 }
 
+export interface BackendTaskRequirements {
+  mode: "managed" | "delegate";
+  browser: boolean;
+  write: boolean;
+  requiredTools: string[];
+  backendAgent: string | null;
+}
+
+export interface BackendTaskResolution extends BackendResolution {
+  capabilities: BackendCapabilities;
+  requirements: BackendTaskRequirements;
+  requirementsMatched: boolean;
+}
+
 export function listBackendAvailability(config: YesChefConfig): BackendAvailability[] {
   return Object.entries(config.backends)
     .sort(([left], [right]) => left.localeCompare(right))
@@ -137,6 +151,90 @@ export function recommendedModelForBackend(backendId: string): string {
   }
 }
 
+export function resolveBackendForTask(
+  config: YesChefConfig,
+  configuredBackend: string | undefined,
+  model: string,
+  requirements: BackendTaskRequirements,
+): BackendTaskResolution {
+  const baseResolution = resolveBackendForModel(config, configuredBackend, model);
+  const availability = listBackendAvailability(config);
+  const availabilityById = new Map(availability.map((backend) => [backend.id, backend]));
+  const baseAvailability = availabilityById.get(baseResolution.backend);
+  const baseCapabilities = baseAvailability?.capabilities ?? resolveBackendCapabilities(baseResolution.backend, config.backends[baseResolution.backend]);
+  const baseMatches = backendMatchesRequirements(baseCapabilities, requirements);
+
+  if (normalizeRequestedBackend(configuredBackend) !== "auto") {
+    return {
+      ...baseResolution,
+      capabilities: baseCapabilities,
+      requirements,
+      requirementsMatched: baseMatches,
+      reason: baseMatches
+        ? baseResolution.reason
+        : `${baseResolution.reason}; explicit backend kept despite capability mismatch`,
+    };
+  }
+
+  if (requirements.backendAgent) {
+    return {
+      ...baseResolution,
+      capabilities: baseCapabilities,
+      requirements,
+      requirementsMatched: baseMatches,
+      reason: baseMatches
+        ? `${baseResolution.reason}; delegate backend pinned by backendAgent`
+        : `${baseResolution.reason}; backendAgent prevents automatic rerouting`,
+    };
+  }
+
+  const candidates = uniqueBackendIds([
+    ...baseResolution.chain,
+    ...availability.map((backend) => backend.id),
+  ]);
+  const matchingCandidate = candidates
+    .map((backendId) => availabilityById.get(backendId))
+    .find(
+      (backend): backend is BackendAvailability =>
+        backend !== undefined
+        && backend.config.enabled !== false
+        && backend.installed
+        && backendMatchesRequirements(backend.capabilities, requirements),
+    );
+
+  if (!matchingCandidate) {
+    return {
+      ...baseResolution,
+      capabilities: baseCapabilities,
+      requirements,
+      requirementsMatched: baseMatches,
+      reason: baseMatches
+        ? `${baseResolution.reason}; current backend already satisfies task requirements`
+        : `${baseResolution.reason}; no installed backend satisfied task requirements`,
+    };
+  }
+
+  if (matchingCandidate.id === baseResolution.backend) {
+    return {
+      ...baseResolution,
+      capabilities: matchingCandidate.capabilities,
+      requirements,
+      requirementsMatched: true,
+      reason: `${baseResolution.reason}; current backend satisfies task requirements`,
+    };
+  }
+
+  return {
+    ...baseResolution,
+    backend: matchingCandidate.id,
+    fallbackUsed: true,
+    capabilities: matchingCandidate.capabilities,
+    requirements,
+    requirementsMatched: true,
+    reason: `auto-routed to ${matchingCandidate.id} for task requirements`,
+  };
+}
+
 export function resolveBackendCapabilities(backendId: string, backend: BackendConfig): BackendCapabilities {
   const defaults = defaultCapabilitiesForBackend(backendId);
   const configured = backend.capabilities ?? {};
@@ -189,4 +287,37 @@ function defaultCapabilitiesForBackend(backendId: string): BackendCapabilityConf
 
 function normalizeToolSurfaces(toolSurfaces: string[]): string[] {
   return [...new Set(toolSurfaces.map((tool) => tool.trim()).filter((tool) => tool.length > 0))].sort();
+}
+
+function backendMatchesRequirements(capabilities: BackendCapabilities, requirements: BackendTaskRequirements): boolean {
+  if (requirements.mode === "managed" && !capabilities.managed) {
+    return false;
+  }
+
+  if (requirements.mode === "delegate" && !capabilities.delegate) {
+    return false;
+  }
+
+  if (requirements.browser && !capabilities.browser) {
+    return false;
+  }
+
+  if (requirements.write && capabilities.patching === "none") {
+    return false;
+  }
+
+  if (requirements.requiredTools.length > 0) {
+    const supportedTools = new Set(capabilities.toolSurfaces);
+    for (const tool of requirements.requiredTools) {
+      if (!supportedTools.has(tool)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+function uniqueBackendIds(ids: string[]): string[] {
+  return [...new Set(ids.filter((id) => id.length > 0))];
 }

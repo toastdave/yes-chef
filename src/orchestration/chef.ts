@@ -563,6 +563,7 @@ function createReviewOrder(
 
   return {
     ...baseOrder,
+    backend: routing.backend,
     packs: routing.packs,
     skills: routing.skills,
     routingReasons: routing.routingReasons,

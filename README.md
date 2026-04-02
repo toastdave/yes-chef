@@ -54,6 +54,7 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - Built-in skills cover verification, debugging, worktree usage, frontend design, browser QA, and architecture review
 - Packs can add skills, validations, tools, and permissions as capability bundles
 - Routing stays explainable through order metadata, prompts, logs, status output, and per-run routing trace artifacts
+- Auto-selected agents can now reroute to a different installed backend when the task requires capabilities such as browser support or writable patching that the first backend choice does not advertise
 - Pack-aware execution now reaches the adapter layer through env vars and command placeholders like `{packs}`, `{skills}`, `{routing_reasons}`, and `{knowledge_sources}`
 - Project overlays can now contribute repo maps, dangerous paths, acceptance criteria, architecture notes, and recommended commands to routing and prompts
 - When `requireBrowserForUi` is enabled, UI-shaped work will route browser-pack validations into Expo and block pass if the browser pack cannot satisfy them

@@ -151,6 +151,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
 
   const order: OrderRecord = {
     ...baseOrder,
+    backend: routing.backend,
     packs: routing.packs,
     skills: routing.skills,
     routingReasons: routing.routingReasons,

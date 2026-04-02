@@ -1,10 +1,14 @@
 import type { ResolvedAgentConfig } from "../core/agents.ts";
-import { describeBackendCapabilities } from "../core/backends.ts";
+import type { BackendCapabilities } from "../core/backends.ts";
+import { describeBackendCapabilities, resolveBackendForTask } from "../core/backends.ts";
 import type { OverlayConfig, PackConfig, SkillConfig, YesChefConfig } from "../core/config.ts";
 import type { MenuRecord, OrderRecord } from "../core/models.ts";
 import { inferKnowledgeSignals, type KnowledgeContext } from "../knowledge/context.ts";
 
 export interface ResolvedRouting {
+  backend: string;
+  backendReason: string;
+  backendCapabilities: BackendCapabilities;
   skills: string[];
   packs: string[];
   validationsRequired: string[];
@@ -51,20 +55,6 @@ export function resolveOrderRouting(options: {
   const textSignals = `${options.menu.objective} ${options.order.title}`.toLowerCase();
   const uiSignals = /(ui|frontend|browser|page|screen|component|design)/.test(textSignals);
   const overlayContext = buildOverlayContext(options.config.overlays, textSignals, knowledgeSources);
-
-  routingReasons.push(`backend:${options.agent.backend} capabilities ${describeBackendCapabilities(options.agent.backendCapabilities)}`);
-
-  if (options.order.mode === "delegate" && !options.agent.backendCapabilities.delegate) {
-    routingReasons.push(`backend:${options.agent.backend} does not advertise delegate support`);
-  }
-
-  if (options.order.mode === "managed" && !options.agent.backendCapabilities.managed) {
-    routingReasons.push(`backend:${options.agent.backend} does not advertise managed prompt execution`);
-  }
-
-  if (uiSignals && !options.agent.backendCapabilities.browser) {
-    routingReasons.push(`backend:${options.agent.backend} lacks native browser support; UI verification relies on shell validations or pack-specific harnesses`);
-  }
 
   for (const skill of options.config.routing.roleSkills[options.order.role] ?? []) {
     if (!skillSet.has(skill)) {
@@ -134,7 +124,44 @@ export function resolveOrderRouting(options: {
     applySkill(skillId, skill, tools, routingReasons);
   }
 
+  const requiredTools = Object.entries(tools)
+    .filter(([, enabled]) => enabled === true)
+    .map(([tool]) => tool)
+    .filter((tool) => tool !== "browser")
+    .sort();
+  const backendResolution = resolveBackendForTask(
+    options.config,
+    options.agent.backendPreference,
+    options.agent.model,
+    {
+      mode: options.order.mode,
+      browser: uiSignals && [...packSet].includes("browser"),
+      write: isWriteOrderKind(options.order.kind),
+      requiredTools,
+      backendAgent: options.order.backendAgent,
+    },
+  );
+
+  routingReasons.push(`backend:${backendResolution.backend} capabilities ${describeBackendCapabilities(backendResolution.capabilities)}`);
+
+  if (backendResolution.backend !== options.agent.backend) {
+    routingReasons.push(`backend rerouted from ${options.agent.backend} to ${backendResolution.backend}`);
+  }
+
+  routingReasons.push(`backend decision: ${backendResolution.reason}`);
+
+  if (!backendResolution.requirementsMatched) {
+    routingReasons.push(`backend:${backendResolution.backend} does not satisfy all requested task capabilities`);
+  }
+
+  if (backendResolution.requirements.browser && !backendResolution.capabilities.browser) {
+    routingReasons.push(`backend:${backendResolution.backend} lacks native browser support; UI verification relies on shell validations or pack-specific harnesses`);
+  }
+
   return {
+    backend: backendResolution.backend,
+    backendReason: backendResolution.reason,
+    backendCapabilities: backendResolution.capabilities,
     skills: configuredSkills,
     packs: [...packSet],
     validationsRequired: [...validationSet],
@@ -219,6 +246,10 @@ function applySkill(
       routingReasons.push(`skill:${skillId} requires tool ${tool}`);
     }
   }
+}
+
+function isWriteOrderKind(kind: OrderRecord["kind"]): boolean {
+  return kind === "implement" || kind === "repair" || kind === "rules-update" || kind === "merge";
 }
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {

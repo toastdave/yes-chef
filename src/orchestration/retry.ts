@@ -133,6 +133,7 @@ export async function scheduleRepairOrder(options: {
 
   const order: OrderRecord = {
     ...baseOrder,
+    backend: routing.backend,
     packs: routing.packs,
     skills: routing.skills,
     routingReasons: routing.routingReasons,

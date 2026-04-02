@@ -2,7 +2,7 @@
 
 ## Status
 
-Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, delegate mode is represented in persisted state, pack-aware adapter invocation reaches the backend through env, placeholders, and routing trace artifacts, and explicit capability reporting now exists on backend availability, resolved agents, doctor output, routing reasons, and pass gate summaries. Remaining work is backend-specific invocation polish, stronger runtime detection, and deeper native-agent integrations.
+Core groundwork implemented. Orders now resolve backends by model family, dispatch routes across multiple adapters, delegate mode is represented in persisted state, pack-aware adapter invocation reaches the backend through env, placeholders, and routing trace artifacts, explicit capability reporting now exists on backend availability, resolved agents, doctor output, routing reasons, and pass gate summaries, and auto-selected orders can now reroute toward backends whose advertised capabilities better fit the task. Remaining work is backend-specific invocation polish, stronger runtime detection, and deeper native-agent integrations.
 
 ## Problem
 
@@ -42,3 +42,4 @@ Introduce a shared adapter contract with explicit backend selection, model-famil
 - Adapter behavior should remain resumable from stored DB state and artifacts.
 - Backend-native capabilities should stay behind the adapter boundary; menus, orders, reviews, and knowledge retrieval should continue to speak in Yes Chef concepts.
 - Remaining work should focus on stronger runtime detection for capability reports, backend-specific managed versus delegate argument templates, native profile support where available, and better artifact or log introspection.
+- Capability-aware rerouting should prefer model-family chain order first, then broader installed backends, while keeping explicit backend bindings stable.

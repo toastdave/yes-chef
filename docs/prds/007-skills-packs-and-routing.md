@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria, browser-pack-aware pass gating for UI work, and routing reasons that call out backend capability summaries. The next implementation step is richer routing heuristics driven by those capability signals and better retrieval quality. After that, remaining work is more advanced pack activation behavior and adapter-specific polish.
+Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria, browser-pack-aware pass gating for UI work, routing reasons that call out backend capability summaries, and first-pass capability-aware backend rerouting for auto-selected agents. The next implementation step is better retrieval-driven heuristics and more advanced pack activation behavior. After that, remaining work is adapter-specific polish.
 
 ## Problem
 
@@ -36,3 +36,4 @@ Introduce first-class skills, richer packs, and explicit routing logic so Yes Ch
 - Routing should be explainable in logs and artifacts so operators can see why a given skill set or backend was chosen.
 - Browser automation should usually be routed to Expo or future tester-oriented flows instead of every write-capable order.
 - Capability reporting and retrieval quality should land before routing grows more opaque so heuristics stay explainable and testable.
+- Capability-aware rerouting should stay conservative: explicit backend choices and backend-native delegate bindings should not be silently rewritten.
