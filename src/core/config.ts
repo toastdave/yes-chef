@@ -18,6 +18,15 @@ export interface BackendConfig {
   delegateArgs?: string[];
   enabled?: boolean;
   installHint?: string;
+  capabilities?: BackendCapabilityConfig;
+}
+
+export interface BackendCapabilityConfig {
+  managed?: boolean;
+  delegate?: boolean;
+  browser?: boolean;
+  patching?: "none" | "patch" | "edit";
+  toolSurfaces?: string[];
 }
 
 export interface AgentConfig {
@@ -149,22 +158,50 @@ const builtinBackends: Record<string, BackendConfig> = {
     command: "codex",
     args: [],
     enabled: true,
+    capabilities: {
+      managed: true,
+      delegate: false,
+      browser: false,
+      patching: "patch",
+      toolSurfaces: ["read", "write", "bash"],
+    },
   },
   opencode: {
     command: "opencode",
     args: [],
     enabled: true,
     installHint: "curl -fsSL https://opencode.ai/install | bash",
+    capabilities: {
+      managed: true,
+      delegate: true,
+      browser: false,
+      patching: "edit",
+      toolSurfaces: ["read", "write", "bash"],
+    },
   },
   claude: {
     command: "claude",
     args: [],
     enabled: true,
+    capabilities: {
+      managed: true,
+      delegate: false,
+      browser: false,
+      patching: "edit",
+      toolSurfaces: ["read", "write", "bash"],
+    },
   },
   gemini: {
     command: "gemini",
     args: [],
     enabled: true,
+    capabilities: {
+      managed: true,
+      delegate: false,
+      browser: false,
+      patching: "edit",
+      toolSurfaces: ["read", "write", "bash"],
+    },
   },
 };
 

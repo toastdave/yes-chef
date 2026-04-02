@@ -25,6 +25,7 @@ bun run cli doctor
 
 Built-in agents inherit the global default backend and model unless a project or agent override says otherwise.
 When the effective backend is `auto`, Yes Chef picks the best installed CLI for the model family: GPT prefers `codex` then `opencode`, Anthropic uses `claude`, Gemini prefers `gemini` then `opencode`, and generic models fall back to `opencode`.
+`yeschef doctor` now reports each backend's advertised capability contract: managed versus delegate support, browser support, patching style, and tool surfaces.
 
 ## Policies
 
@@ -97,6 +98,7 @@ Project and global config can define custom agents and map them to roles.
 ```
 
 Use `managedArgs` and `delegateArgs` in backend config when a CLI needs different invocation templates for Yes Chef-managed prompts versus backend-native delegation.
+Use `backends.<id>.capabilities` to override advertised backend traits such as `managed`, `delegate`, `browser`, `patching`, and `toolSurfaces` when the defaults do not match a local setup.
 
 ## Layout
 

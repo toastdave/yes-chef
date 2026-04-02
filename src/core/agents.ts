@@ -1,4 +1,5 @@
-import { resolveBackendForModel } from "./backends.ts";
+import type { BackendCapabilities } from "./backends.ts";
+import { resolveBackendCapabilities, resolveBackendForModel } from "./backends.ts";
 import type { AgentConfig, YesChefConfig } from "./config.ts";
 import type { RoleName } from "./models.ts";
 
@@ -48,6 +49,7 @@ export interface ResolvedAgentConfig extends Omit<AgentConfig, "backend" | "mode
   backend: string;
   backendPreference: string;
   backendReason: string;
+  backendCapabilities: BackendCapabilities;
   model: string;
   modelFamily: string;
   prompt: string;
@@ -94,6 +96,7 @@ export function resolveAgent(config: YesChefConfig, agentId: string): ResolvedAg
   const model = inheritedValue(merged.model, config.defaults.model);
   const backendPreference = inheritedValue(merged.backend, config.defaults.backend);
   const backendResolution = resolveBackendForModel(config, backendPreference, model);
+  const backendCapabilities = resolveBackendCapabilities(backendResolution.backend, config.backends[backendResolution.backend]);
 
   return {
     ...merged,
@@ -101,6 +104,7 @@ export function resolveAgent(config: YesChefConfig, agentId: string): ResolvedAg
     backend: backendResolution.backend,
     backendPreference,
     backendReason: backendResolution.reason,
+    backendCapabilities,
     model,
     modelFamily: backendResolution.modelFamily,
     prompt: inheritedValue(merged.prompt, merged.role),

@@ -1,4 +1,5 @@
 import type { ResolvedAgentConfig } from "../core/agents.ts";
+import { describeBackendCapabilities } from "../core/backends.ts";
 import type { OverlayConfig, PackConfig, SkillConfig, YesChefConfig } from "../core/config.ts";
 import type { MenuRecord, OrderRecord } from "../core/models.ts";
 import { inferKnowledgeSignals, type KnowledgeContext } from "../knowledge/context.ts";
@@ -50,6 +51,20 @@ export function resolveOrderRouting(options: {
   const textSignals = `${options.menu.objective} ${options.order.title}`.toLowerCase();
   const uiSignals = /(ui|frontend|browser|page|screen|component|design)/.test(textSignals);
   const overlayContext = buildOverlayContext(options.config.overlays, textSignals, knowledgeSources);
+
+  routingReasons.push(`backend:${options.agent.backend} capabilities ${describeBackendCapabilities(options.agent.backendCapabilities)}`);
+
+  if (options.order.mode === "delegate" && !options.agent.backendCapabilities.delegate) {
+    routingReasons.push(`backend:${options.agent.backend} does not advertise delegate support`);
+  }
+
+  if (options.order.mode === "managed" && !options.agent.backendCapabilities.managed) {
+    routingReasons.push(`backend:${options.agent.backend} does not advertise managed prompt execution`);
+  }
+
+  if (uiSignals && !options.agent.backendCapabilities.browser) {
+    routingReasons.push(`backend:${options.agent.backend} lacks native browser support; UI verification relies on shell validations or pack-specific harnesses`);
+  }
 
   for (const skill of options.config.routing.roleSkills[options.order.role] ?? []) {
     if (!skillSet.has(skill)) {

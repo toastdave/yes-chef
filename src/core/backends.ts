@@ -1,13 +1,23 @@
 import { DEFAULT_OPENCODE_FREE_MODEL } from "./constants.ts";
-import type { BackendConfig, YesChefConfig } from "./config.ts";
+import type { BackendCapabilityConfig, BackendConfig, YesChefConfig } from "./config.ts";
 import { commandExists } from "./exec.ts";
 
 export type ModelFamily = "gpt" | "anthropic" | "gemini" | "generic";
+export type BackendPatchingMode = "none" | "patch" | "edit";
+
+export interface BackendCapabilities {
+  managed: boolean;
+  delegate: boolean;
+  browser: boolean;
+  patching: BackendPatchingMode;
+  toolSurfaces: string[];
+}
 
 export interface BackendAvailability {
   id: string;
   config: BackendConfig;
   installed: boolean;
+  capabilities: BackendCapabilities;
 }
 
 export interface BackendResolution {
@@ -26,6 +36,7 @@ export function listBackendAvailability(config: YesChefConfig): BackendAvailabil
       id,
       config: backend,
       installed: commandExists(backend.command),
+      capabilities: resolveBackendCapabilities(id, backend),
     }));
 }
 
@@ -126,10 +137,56 @@ export function recommendedModelForBackend(backendId: string): string {
   }
 }
 
+export function resolveBackendCapabilities(backendId: string, backend: BackendConfig): BackendCapabilities {
+  const defaults = defaultCapabilitiesForBackend(backendId);
+  const configured = backend.capabilities ?? {};
+
+  return {
+    managed: configured.managed ?? defaults.managed ?? true,
+    delegate: configured.delegate ?? defaults.delegate ?? backend.delegateArgs !== undefined,
+    browser: configured.browser ?? defaults.browser ?? false,
+    patching: configured.patching ?? defaults.patching ?? "edit",
+    toolSurfaces: normalizeToolSurfaces(configured.toolSurfaces ?? defaults.toolSurfaces ?? []),
+  };
+}
+
+export function describeBackendCapabilities(capabilities: BackendCapabilities): string {
+  const parts = [
+    capabilities.managed ? "managed" : "no-managed",
+    capabilities.delegate ? "delegate" : "no-delegate",
+    capabilities.browser ? "browser" : "no-browser",
+    `patch=${capabilities.patching}`,
+  ];
+
+  if (capabilities.toolSurfaces.length > 0) {
+    parts.push(`tools=${capabilities.toolSurfaces.join("/")}`);
+  }
+
+  return parts.join(", ");
+}
+
 function normalizeRequestedBackend(configuredBackend: string | undefined): string {
   if (!configuredBackend || configuredBackend === "inherit" || configuredBackend === "auto") {
     return "auto";
   }
 
   return configuredBackend;
+}
+
+function defaultCapabilitiesForBackend(backendId: string): BackendCapabilityConfig {
+  switch (backendId) {
+    case "codex":
+      return { managed: true, delegate: false, browser: false, patching: "patch", toolSurfaces: ["read", "write", "bash"] };
+    case "opencode":
+      return { managed: true, delegate: true, browser: false, patching: "edit", toolSurfaces: ["read", "write", "bash"] };
+    case "claude":
+    case "gemini":
+      return { managed: true, delegate: false, browser: false, patching: "edit", toolSurfaces: ["read", "write", "bash"] };
+    default:
+      return { managed: true, delegate: false, browser: false, patching: "edit", toolSurfaces: ["read", "write", "bash"] };
+  }
+}
+
+function normalizeToolSurfaces(toolSurfaces: string[]): string[] {
+  return [...new Set(toolSurfaces.map((tool) => tool.trim()).filter((tool) => tool.length > 0))].sort();
 }

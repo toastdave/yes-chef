@@ -1,5 +1,5 @@
 import { listResolvedAgents, resolveAgent, resolveAgentForRole } from "../../core/agents.ts";
-import { listBackendAvailability } from "../../core/backends.ts";
+import { describeBackendCapabilities, listBackendAvailability } from "../../core/backends.ts";
 import { loadConfigWithMeta } from "../../core/config.ts";
 import { ensureRuntimePaths } from "../../core/fs.ts";
 import { getDatabase } from "../../db/client.ts";
@@ -21,7 +21,7 @@ export async function runDoctorCommand(): Promise<void> {
       const agent = resolveAgentForRole(config, role);
       const preference = agent.backendPreference === agent.backend ? agent.backend : `${agent.backendPreference} -> ${agent.backend}`;
       const delegate = agent.backendAgent ? `:${agent.backendAgent}` : "";
-      return `${role} -> ${agent.id} (${preference}${delegate}, ${agent.model}, ${agent.mode})`;
+      return `${role} -> ${agent.id} (${preference}${delegate}, ${agent.model}, ${agent.mode}, caps:${describeBackendCapabilities(agent.backendCapabilities)})`;
     });
 
   console.log("Yes Chef - Doctor");
@@ -31,11 +31,13 @@ export async function runDoctorCommand(): Promise<void> {
   console.log(`ok      sources            ${sources.map((source) => `${source.kind}:${source.path}`).join(" -> ")}`);
   const defaultPreference =
     defaultAgent.backendPreference === defaultAgent.backend ? defaultAgent.backend : `${defaultAgent.backendPreference} -> ${defaultAgent.backend}`;
-  console.log(`ok      default-agent      ${defaultAgent.id} (${defaultPreference}, ${defaultAgent.model}, ${defaultAgent.mode})`);
+  console.log(
+    `ok      default-agent      ${defaultAgent.id} (${defaultPreference}, ${defaultAgent.model}, ${defaultAgent.mode}, caps:${describeBackendCapabilities(defaultAgent.backendCapabilities)})`,
+  );
 
   for (const backend of backends) {
     const status = backend.installed ? (backend.config.enabled === false ? "disabled" : "ok") : backend.config.enabled === false ? "disabled" : "missing";
-    console.log(`${status.padEnd(7)} backend:${backend.id.padEnd(10)} ${backend.config.command}`);
+    console.log(`${status.padEnd(7)} backend:${backend.id.padEnd(10)} ${backend.config.command} (${describeBackendCapabilities(backend.capabilities)})`);
   }
 
   for (const roleLine of roleLines) {

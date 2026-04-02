@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria, and browser-pack-aware pass gating for UI work. The next implementation step is richer routing heuristics driven by explicit backend capability data and better retrieval quality. After that, remaining work is more advanced pack activation behavior and adapter-specific polish.
+Foundation in progress. The scaffold now has built-in skill definitions, richer pack metadata, deterministic routing resolution, persisted routing reasons on orders and runs, pack-aware adapter invocation via env and trace artifacts, first-pass project overlays for repo maps, dangerous paths, commands, and acceptance criteria, browser-pack-aware pass gating for UI work, and routing reasons that call out backend capability summaries. The next implementation step is richer routing heuristics driven by those capability signals and better retrieval quality. After that, remaining work is more advanced pack activation behavior and adapter-specific polish.
 
 ## Problem
 

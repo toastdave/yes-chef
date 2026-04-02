@@ -9,6 +9,7 @@ interface PassResponse {
     executionReady: boolean;
     validationsPassed: boolean;
     browserRequired: boolean;
+    browserAgentCapable: boolean;
     browserReady: boolean;
     reviewRequired: boolean;
     reviewPassed: boolean;
@@ -33,7 +34,7 @@ export async function runPassCommand(args: string[]): Promise<void> {
     `Validations: ${result.validations.map((validation) => `${validation.name}=${validation.status}${validation.summary ? ` (${validation.summary.failureCategory}, artifacts=${validation.summary.artifactCount})` : ""}`).join(", ")}`,
   );
   console.log(
-    `Gates: execution=${result.gates.executionReady}, validations=${result.gates.validationsPassed}, browser=${result.gates.browserReady}${result.gates.browserRequired ? " (required)" : ""}, review=${result.gates.reviewPassed}, conventional=${result.gates.conventionalCommitReady}`,
+    `Gates: execution=${result.gates.executionReady}, validations=${result.gates.validationsPassed}, browser=${result.gates.browserReady}${result.gates.browserRequired ? ` (required, agent-capable=${result.gates.browserAgentCapable})` : ""}, review=${result.gates.reviewPassed}, conventional=${result.gates.conventionalCommitReady}`,
   );
   if (result.reviews.length > 0) {
     console.log(`Reviews: ${result.reviews.map((review) => `${review.id}=${review.status}`).join(", ")}`);

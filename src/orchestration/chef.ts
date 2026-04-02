@@ -37,6 +37,7 @@ export interface PassResult {
     executionReady: boolean;
     validationsPassed: boolean;
     browserRequired: boolean;
+    browserAgentCapable: boolean;
     browserReady: boolean;
     reviewRequired: boolean;
     reviewPassed: boolean;
@@ -200,10 +201,12 @@ export async function passMenu(options: {
   }
 
   const orders = listOrdersByMenu(options.db, menu.id);
+  const expoAgent = resolveAgentForRole(options.config, "expo");
   const uiWorkDetected = detectUiWork(menu, orders);
   const browserRequired = uiWorkDetected && (options.config.modes[options.config.defaults.mode]?.requireBrowserForUi ?? false);
   const browserValidationCommands = uiWorkDetected ? resolvePackValidationCommands(options.config, ["browser"]) : {};
   const browserValidationPackMap = Object.fromEntries(Object.keys(browserValidationCommands).map((name) => [name, ["browser"]]));
+  const browserAgentCapable = expoAgent.backendCapabilities.browser;
   const browserReady = !browserRequired || (options.config.packs.browser?.enabled === true && Object.keys(browserValidationCommands).length > 0);
 
   const validations = await runMenuValidations({
@@ -259,6 +262,7 @@ export async function passMenu(options: {
       executionReady,
       validationsPassed: allPassed,
       browserRequired,
+      browserAgentCapable,
       browserReady,
       reviewRequired,
       reviewPassed,
