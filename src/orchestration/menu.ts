@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 
+import type { BackendCapabilities } from "../core/backends.ts";
 import { resolveAgentForRole, resolveAgentIdForRole } from "../core/agents.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { writeJsonFile, writeTextFile } from "../core/fs.ts";
@@ -34,7 +35,12 @@ export interface MenuBundle {
   knowledge?: KnowledgeContext;
 }
 
-export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?: KnowledgeContext): MenuBundle {
+export function buildMenuBundle(
+  goal: string,
+  config: YesChefConfig,
+  knowledge?: KnowledgeContext,
+  observedCapabilities?: Record<string, BackendCapabilities>,
+): MenuBundle {
   const now = new Date().toISOString();
   const menuId = createId("M");
   const orderId = createId("O");
@@ -147,6 +153,7 @@ export function buildMenuBundle(goal: string, config: YesChefConfig, knowledge?:
     order: baseOrder,
     agent,
     knowledge,
+    observedCapabilities,
   });
 
   const order: OrderRecord = {

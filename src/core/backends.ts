@@ -156,12 +156,15 @@ export function resolveBackendForTask(
   configuredBackend: string | undefined,
   model: string,
   requirements: BackendTaskRequirements,
+  observedCapabilities: Record<string, BackendCapabilities> = {},
 ): BackendTaskResolution {
   const baseResolution = resolveBackendForModel(config, configuredBackend, model);
   const availability = listBackendAvailability(config);
   const availabilityById = new Map(availability.map((backend) => [backend.id, backend]));
   const baseAvailability = availabilityById.get(baseResolution.backend);
-  const baseCapabilities = baseAvailability?.capabilities ?? resolveBackendCapabilities(baseResolution.backend, config.backends[baseResolution.backend]);
+  const baseCapabilities = observedCapabilities[baseResolution.backend]
+    ?? baseAvailability?.capabilities
+    ?? resolveBackendCapabilities(baseResolution.backend, config.backends[baseResolution.backend]);
   const baseMatches = backendMatchesRequirements(baseCapabilities, requirements);
 
   if (normalizeRequestedBackend(configuredBackend) !== "auto") {
@@ -199,7 +202,7 @@ export function resolveBackendForTask(
         backend !== undefined
         && backend.config.enabled !== false
         && backend.installed
-        && backendMatchesRequirements(backend.capabilities, requirements),
+        && backendMatchesRequirements(observedCapabilities[backend.id] ?? backend.capabilities, requirements),
     );
 
   if (!matchingCandidate) {
@@ -217,7 +220,7 @@ export function resolveBackendForTask(
   if (matchingCandidate.id === baseResolution.backend) {
     return {
       ...baseResolution,
-      capabilities: matchingCandidate.capabilities,
+      capabilities: observedCapabilities[matchingCandidate.id] ?? matchingCandidate.capabilities,
       requirements,
       requirementsMatched: true,
       reason: `${baseResolution.reason}; current backend satisfies task requirements`,
@@ -228,7 +231,7 @@ export function resolveBackendForTask(
     ...baseResolution,
     backend: matchingCandidate.id,
     fallbackUsed: true,
-    capabilities: matchingCandidate.capabilities,
+    capabilities: observedCapabilities[matchingCandidate.id] ?? matchingCandidate.capabilities,
     requirements,
     requirementsMatched: true,
     reason: `auto-routed to ${matchingCandidate.id} for task requirements`,

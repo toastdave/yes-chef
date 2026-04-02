@@ -41,6 +41,7 @@ export function resolveOrderRouting(options: {
   order: OrderRecord;
   agent: ResolvedAgentConfig;
   knowledge?: KnowledgeContext;
+  observedCapabilities?: Record<string, BackendCapabilities>;
 }): ResolvedRouting {
   const skillSet = new Set<string>([...options.order.skills, ...options.agent.skills]);
   const packSet = new Set<string>([...options.order.packs, ...options.agent.packs]);
@@ -140,6 +141,7 @@ export function resolveOrderRouting(options: {
       requiredTools,
       backendAgent: options.order.backendAgent,
     },
+    options.observedCapabilities,
   );
 
   routingReasons.push(`backend:${backendResolution.backend} capabilities ${describeBackendCapabilities(backendResolution.capabilities)}`);

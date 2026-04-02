@@ -14,6 +14,7 @@ bun run cli lookup "repair critic"
 bun run cli knowledge index
 bun run cli knowledge search "worktree retry"
 bun run cli doctor
+bun test
 ```
 
 ## Config precedence
@@ -25,7 +26,7 @@ bun run cli doctor
 
 Built-in agents inherit the global default backend and model unless a project or agent override says otherwise.
 When the effective backend is `auto`, Yes Chef picks the best installed CLI for the model family: GPT prefers `codex` then `opencode`, Anthropic uses `claude`, Gemini prefers `gemini` then `opencode`, and generic models fall back to `opencode`.
-`yeschef doctor` now reports each backend's advertised capability contract: managed versus delegate support, browser support, patching style, and tool surfaces.
+`yeschef doctor` now reports each backend's advertised capability contract and, after successful runs, any observed capability upgrades learned from local execution.
 
 ## Policies
 
@@ -55,6 +56,7 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - Packs can add skills, validations, tools, and permissions as capability bundles
 - Routing stays explainable through order metadata, prompts, logs, status output, and per-run routing trace artifacts
 - Auto-selected agents can now reroute to a different installed backend when the task requires capabilities such as browser support or writable patching that the first backend choice does not advertise
+- Successful runs now persist lightweight backend capability observations so future auto-routing can reuse locally proven managed, delegate, browser, write, and tool-surface support
 - Pack-aware execution now reaches the adapter layer through env vars and command placeholders like `{packs}`, `{skills}`, `{routing_reasons}`, and `{knowledge_sources}`
 - Project overlays can now contribute repo maps, dangerous paths, acceptance criteria, architecture notes, and recommended commands to routing and prompts
 - When `requireBrowserForUi` is enabled, UI-shaped work will route browser-pack validations into Expo and block pass if the browser pack cannot satisfy them

@@ -2,6 +2,7 @@ import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 
 import { resolveAgent } from "../core/agents.ts";
+import { getObservedBackendCapabilities } from "../core/backend-observations.ts";
 import { appendOrderToMenu } from "./menu.ts";
 import { insertOrder, listOrdersByMenu } from "./orders.ts";
 import type { YesChefConfig } from "../core/config.ts";
@@ -129,6 +130,7 @@ export async function scheduleRepairOrder(options: {
       sourceTypes: knowledgeContext.sourceTypes,
       results: knowledgeContext.results,
     },
+    observedCapabilities: getObservedBackendCapabilities(options.db, options.config),
   });
 
   const order: OrderRecord = {

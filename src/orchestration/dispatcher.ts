@@ -5,6 +5,7 @@ import { runCodexAdapter } from "../adapters/codex/run.ts";
 import { runGeminiAdapter } from "../adapters/gemini/run.ts";
 import { runOpenCodeAdapter } from "../adapters/opencode/run.ts";
 import type { AdapterRunResult } from "../adapters/shared/run.ts";
+import { recordBackendCapabilityObservation } from "../core/backend-observations.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import { writeJsonFile } from "../core/fs.ts";
@@ -209,6 +210,10 @@ export async function dispatchOrder(options: {
   );
 
   updateOrderStatus(options.db, options.order.id, finishedStatus === "completed" ? "completed" : "failed");
+
+  if (finishedStatus === "completed") {
+    recordBackendCapabilityObservation(options.db, options.order);
+  }
 
   if (finishedStatus === "failed" && options.order.kind !== "review") {
     await scheduleRepairOrder({

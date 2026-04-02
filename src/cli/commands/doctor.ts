@@ -1,4 +1,5 @@
 import { listResolvedAgents, resolveAgent, resolveAgentForRole } from "../../core/agents.ts";
+import { getObservedBackendCapabilities, listBackendCapabilityObservations } from "../../core/backend-observations.ts";
 import { describeBackendCapabilities, listBackendAvailability } from "../../core/backends.ts";
 import { loadConfigWithMeta } from "../../core/config.ts";
 import { ensureRuntimePaths } from "../../core/fs.ts";
@@ -14,6 +15,8 @@ export async function runDoctorCommand(): Promise<void> {
   await migrateDatabase();
   const db = getDatabase();
   const backends = listBackendAvailability(config);
+  const observedCapabilities = getObservedBackendCapabilities(db, config);
+  const observations = new Map(listBackendCapabilityObservations(db).map((observation) => [observation.backendId, observation]));
   const defaultAgent = resolveAgent(config, config.defaults.agent);
   const roleLines = Object.keys(config.roleDefaults)
     .map((role) => role as keyof typeof config.roleDefaults)
@@ -21,7 +24,8 @@ export async function runDoctorCommand(): Promise<void> {
       const agent = resolveAgentForRole(config, role);
       const preference = agent.backendPreference === agent.backend ? agent.backend : `${agent.backendPreference} -> ${agent.backend}`;
       const delegate = agent.backendAgent ? `:${agent.backendAgent}` : "";
-      return `${role} -> ${agent.id} (${preference}${delegate}, ${agent.model}, ${agent.mode}, caps:${describeBackendCapabilities(agent.backendCapabilities)})`;
+      const capabilities = observedCapabilities[agent.backend] ?? agent.backendCapabilities;
+      return `${role} -> ${agent.id} (${preference}${delegate}, ${agent.model}, ${agent.mode}, caps:${describeBackendCapabilities(capabilities)})`;
     });
 
   console.log("Yes Chef - Doctor");
@@ -31,13 +35,18 @@ export async function runDoctorCommand(): Promise<void> {
   console.log(`ok      sources            ${sources.map((source) => `${source.kind}:${source.path}`).join(" -> ")}`);
   const defaultPreference =
     defaultAgent.backendPreference === defaultAgent.backend ? defaultAgent.backend : `${defaultAgent.backendPreference} -> ${defaultAgent.backend}`;
+  const defaultCapabilities = observedCapabilities[defaultAgent.backend] ?? defaultAgent.backendCapabilities;
   console.log(
-    `ok      default-agent      ${defaultAgent.id} (${defaultPreference}, ${defaultAgent.model}, ${defaultAgent.mode}, caps:${describeBackendCapabilities(defaultAgent.backendCapabilities)})`,
+    `ok      default-agent      ${defaultAgent.id} (${defaultPreference}, ${defaultAgent.model}, ${defaultAgent.mode}, caps:${describeBackendCapabilities(defaultCapabilities)})`,
   );
 
   for (const backend of backends) {
     const status = backend.installed ? (backend.config.enabled === false ? "disabled" : "ok") : backend.config.enabled === false ? "disabled" : "missing";
-    console.log(`${status.padEnd(7)} backend:${backend.id.padEnd(10)} ${backend.config.command} (${describeBackendCapabilities(backend.capabilities)})`);
+    const observed = observedCapabilities[backend.id];
+    const observedSuffix = observations.has(backend.id)
+      ? ` observed:${describeBackendCapabilities(observed)} runs=${observations.get(backend.id)!.sampleCount}`
+      : "";
+    console.log(`${status.padEnd(7)} backend:${backend.id.padEnd(10)} ${backend.config.command} (${describeBackendCapabilities(backend.capabilities)})${observedSuffix}`);
   }
 
   for (const roleLine of roleLines) {

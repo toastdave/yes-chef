@@ -11,6 +11,7 @@
     "cli": "bun run src/cli/index.ts",
     "daemon": "bun run src/daemon/server.ts",
     "doctor": "bun run src/cli/index.ts doctor",
+    "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },
   "devDependencies": {

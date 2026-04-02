@@ -107,6 +107,16 @@ export const schemaStatements = [
     started_at TEXT NOT NULL,
     ended_at TEXT
   )`,
+  `CREATE TABLE IF NOT EXISTS backend_capability_observations (
+    backend_id TEXT PRIMARY KEY,
+    managed_success INTEGER NOT NULL DEFAULT 0,
+    delegate_success INTEGER NOT NULL DEFAULT 0,
+    write_success INTEGER NOT NULL DEFAULT 0,
+    browser_success INTEGER NOT NULL DEFAULT 0,
+    tool_surfaces_json TEXT NOT NULL DEFAULT '[]',
+    sample_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS events (
     id TEXT PRIMARY KEY,
     ts TEXT NOT NULL,

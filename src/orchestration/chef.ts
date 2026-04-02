@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 
 import { resolveAgentForRole } from "../core/agents.ts";
+import { getObservedBackendCapabilities } from "../core/backend-observations.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import type { MenuRecord, OrderRecord, RunRecord, ValidationRecord } from "../core/models.ts";
@@ -54,7 +55,8 @@ export async function prepMenu(options: {
 }): Promise<PrepResult> {
   const knowledge = await indexKnowledgeDocuments(options.db, options.root);
   const knowledgeContext = buildKnowledgeContextForGoal(options.db, options.goal);
-  const bundle = buildMenuBundle(options.goal, options.config, knowledgeContext);
+  const observedCapabilities = getObservedBackendCapabilities(options.db, options.config);
+  const bundle = buildMenuBundle(options.goal, options.config, knowledgeContext, observedCapabilities);
   insertMenu(options.db, bundle.menu);
 
   for (const order of bundle.orders) {
@@ -348,9 +350,10 @@ async function runCriticPass(
     || reviewOrder.failureContext.reviewTargetOrderId !== targetOrder.id;
 
   const reviewKnowledge = targetOrder ? buildKnowledgeContextForReview(db, menu, targetOrder) : null;
+  const observedCapabilities = getObservedBackendCapabilities(db, config);
 
   if (shouldCreateReview) {
-    reviewOrder = createReviewOrder(config, menu, targetOrder, reviewKnowledge);
+    reviewOrder = createReviewOrder(config, menu, targetOrder, reviewKnowledge, observedCapabilities);
     insertOrder(db, reviewOrder);
     appendOrderToMenu(db, menu.id, reviewOrder.id);
 
@@ -467,6 +470,7 @@ function createReviewOrder(
   menu: MenuRecord,
   targetOrder: ReturnType<typeof latestReviewTargetOrder>,
   knowledge: ReturnType<typeof buildKnowledgeContextForReview> | null,
+  observedCapabilities: Record<string, import("../core/backends.ts").BackendCapabilities>,
 ) {
   const now = new Date().toISOString();
   const agent = resolveAgentForRole(config, "critic");
@@ -559,6 +563,7 @@ function createReviewOrder(
     order: baseOrder,
     agent,
     knowledge: knowledge ?? undefined,
+    observedCapabilities,
   });
 
   return {
