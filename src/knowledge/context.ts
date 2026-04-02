@@ -127,25 +127,62 @@ function buildSearchQuery(parts: string[]): string {
 }
 
 function searchWithFallback(db: Database, candidates: string[], profile: KnowledgeProfile): KnowledgeContext {
-  for (const candidate of candidates) {
+  const merged = new Map<string, { result: KnowledgeSearchResult; hits: number; bestIndex: number }>();
+  const queries: string[] = [];
+
+  for (const [index, candidate] of candidates.entries()) {
     const query = buildSearchQuery([candidate]);
 
     if (!query) {
       continue;
     }
 
+    queries.push(query);
+
     const results = searchKnowledgeDocuments(db, query, {
       limit: profile.limit,
       sourceTypes: profile.sourceTypes,
     });
-    if (results.length > 0) {
-      return {
-        query,
-        profile: profile.name,
-        sourceTypes: profile.sourceTypes,
-        results,
-      };
+
+    for (const result of results) {
+      const existing = merged.get(result.id);
+      if (!existing) {
+        merged.set(result.id, { result, hits: 1, bestIndex: index });
+        continue;
+      }
+
+      existing.hits += 1;
+      existing.bestIndex = Math.min(existing.bestIndex, index);
+      if (result.rank < existing.result.rank) {
+        existing.result = result;
+      }
     }
+  }
+
+  if (merged.size > 0) {
+    return {
+      query: buildSearchQuery(queries.length > 0 ? queries : candidates),
+      profile: profile.name,
+      sourceTypes: profile.sourceTypes,
+      results: [...merged.values()]
+        .sort((left, right) => {
+          if (left.hits !== right.hits) {
+            return right.hits - left.hits;
+          }
+
+          if (left.bestIndex !== right.bestIndex) {
+            return left.bestIndex - right.bestIndex;
+          }
+
+          if (left.result.rank !== right.result.rank) {
+            return left.result.rank - right.result.rank;
+          }
+
+          return right.result.updatedAt.localeCompare(left.result.updatedAt);
+        })
+        .slice(0, profile.limit)
+        .map((entry) => entry.result),
+    };
   }
 
   return {

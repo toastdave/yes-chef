@@ -2,7 +2,7 @@
 
 ## Status
 
-Foundation in progress. The scaffold now has a local knowledge document table, SQLite FTS indexing, daemon endpoints for indexing and search, a CLI path for indexing and querying repo knowledge, source-filtered retrieval, a combined state-plus-knowledge lookup path, and first-pass use of retrieved knowledge during prep, review, repair, and runtime prompt construction. Remaining work is richer source coverage, better ranking, and optional semantic search.
+Foundation in progress. The scaffold now has a local knowledge document table, SQLite FTS indexing, daemon endpoints for indexing and search, a CLI path for indexing and querying repo knowledge, source-filtered retrieval, a combined state-plus-knowledge lookup path, first-pass use of retrieved knowledge during prep, review, repair, and runtime prompt construction, multi-expression FTS fallback, source-aware reranking, and candidate-merging knowledge context assembly. Remaining work is richer source coverage, deeper retrieval heuristics, and optional semantic search.
 
 ## Problem
 
@@ -34,3 +34,4 @@ Add a local-first knowledge layer that keeps structured operational state in SQL
 - FTS5 should be the default retrieval engine for local docs because it is fast, cheap, explainable, and works offline.
 - Semantic retrieval should be introduced only where fuzzy recall clearly improves outcomes.
 - Retrieval results should carry source references so downstream prompts and reports can explain where context came from.
+- Exact-match and source-aware heuristics should stay explainable instead of hiding all ranking behavior behind opaque embedding scores.

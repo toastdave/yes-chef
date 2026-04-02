@@ -48,6 +48,7 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - `yeschef lookup "..."` combines runtime state search with knowledge search so orders, runs, workspaces, validations, and docs can be searched together
 - `yeschef prep` refreshes the index before creating a menu so planning has fresh local context available
 - implementation, review, and repair prompts now pull top local knowledge hits into their execution brief automatically
+- knowledge retrieval now reranks results with source-aware heuristics and falls back from strict multi-term matches to broader FTS matches before giving up
 
 ## Skills And Packs
 
@@ -61,6 +62,7 @@ When Critic fails, Yes Chef now classifies the review failure, looks up related 
 - Project overlays can now contribute repo maps, dangerous paths, acceptance criteria, architecture notes, and recommended commands to routing and prompts
 - When `requireBrowserForUi` is enabled, UI-shaped work will route browser-pack validations into Expo and block pass if the browser pack cannot satisfy them
 - Validation commands now receive `YESCHEF_VALIDATION_ARTIFACT_DIR`, `YESCHEF_VALIDATION_OUTPUT_PATH`, and `YESCHEF_VALIDATION_SUMMARY_PATH`; browser validations are expected to write screenshots or traces there so pass can persist structured Expo artifacts
+- `yeschef status` now shows learned backend observations alongside active menu and workspace state so routing feedback is visible without opening raw DB tables
 
 ## Custom agents
 

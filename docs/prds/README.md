@@ -20,7 +20,7 @@ These PRDs capture the planned next layers of the local-first Yes Chef runtime.
 
 ## Planning notes
 
-- Config layering, multi-adapter routing, worktree isolation, pass-gate foundations, knowledge retrieval, and skill-pack routing now exist in the scaffold, and browser-validation plus backend-capability reporting now have first-pass plumbing, including conservative capability-aware backend rerouting for auto-selected orders and runtime capability observations from successful runs, so the next implementation phase should focus on stronger default browser harnesses, richer retrieval quality, and deeper routing heuristics.
+- Config layering, multi-adapter routing, worktree isolation, pass-gate foundations, knowledge retrieval, and skill-pack routing now exist in the scaffold, and browser-validation plus backend-capability reporting now have first-pass plumbing, including conservative capability-aware backend rerouting for auto-selected orders, runtime capability observations from successful runs, and better retrieval reranking, so the next implementation phase should focus on stronger default browser harnesses, deeper retrieval heuristics, and richer routing decisions.
 - Browser validation now has shell-based artifact and summary plumbing, so the next browser milestone is a stronger default harness story rather than more placeholder gating.
 - The dependency-aware implementation order should be: real browser validation first, adapter capability contracts second, retrieval quality third, and routing heuristics fourth.
 - Config validation and stronger planning ergonomics should tighten next so setup, routing, and menu generation all validate the same policy model.

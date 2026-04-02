@@ -2,7 +2,7 @@
 
 ## Status
 
-Not started as a dedicated TUI. The scaffold already exposes compact `status`, `logs`, `lookup`, routing traces, and SSE events, but it does not yet provide a full-screen interactive service board.
+Not started as a dedicated TUI. The scaffold already exposes compact `status`, `logs`, `lookup`, routing traces, SSE events, and backend-learning summaries in the status board, but it does not yet provide a full-screen interactive service board.
 
 ## Problem
 
@@ -28,3 +28,4 @@ Add an optional full-screen terminal experience on top of the stable daemon API 
 
 - Build the service board on top of the stable daemon API and merged config model rather than a backend-specific TUI.
 - Treat routing and retrieval explainability as first-class UI concerns, not debug-only afterthoughts.
+- Compact status views should keep surfacing learned backend behavior and retrieval context even before a full TUI exists.

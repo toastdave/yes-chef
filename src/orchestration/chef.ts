@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 
 import { resolveAgentForRole } from "../core/agents.ts";
-import { getObservedBackendCapabilities } from "../core/backend-observations.ts";
+import { getObservedBackendCapabilities, listBackendCapabilityObservations } from "../core/backend-observations.ts";
 import type { YesChefConfig } from "../core/config.ts";
 import { createId } from "../core/ids.ts";
 import type { MenuRecord, OrderRecord, RunRecord, ValidationRecord } from "../core/models.ts";
@@ -277,6 +277,7 @@ export function buildStatusSnapshot(db: Database): {
   menus: MenuRecord[];
   orders: ReturnType<typeof listOrdersByMenu>;
   workspaces: ReturnType<typeof listWorkspaceRecords>;
+  backendObservations: ReturnType<typeof listBackendCapabilityObservations>;
 } {
   const menus = listMenus(db);
   const activeMenu = menus[0];
@@ -285,6 +286,7 @@ export function buildStatusSnapshot(db: Database): {
     menus,
     orders: activeMenu ? listOrdersByMenu(db, activeMenu.id) : [],
     workspaces: listWorkspaceRecords(db),
+    backendObservations: listBackendCapabilityObservations(db),
   };
 }
 

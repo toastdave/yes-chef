@@ -73,7 +73,7 @@ function searchState(db: Database, query: string, limit: number): LookupStateRes
     return [];
   }
 
-  const terms = normalized.split(/\s+/).filter(Boolean);
+  const terms = tokenizeQuery(normalized);
   const results = [
     ...searchMenus(db, terms, limit),
     ...searchOrders(db, terms, limit),
@@ -177,5 +177,17 @@ function matches(fields: string[], terms: string[]): boolean {
 
 function score(result: LookupStateResult, terms: string[]): number {
   const haystack = `${result.title} ${result.summary} ${result.status} ${result.id} ${result.relatedId ?? ""}`.toLowerCase();
-  return terms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
+  const phrase = terms.join(" ");
+  const title = result.title.toLowerCase();
+  const summary = result.summary.toLowerCase();
+  const phraseBonus = phrase.length > 0 && (title.includes(phrase) || summary.includes(phrase)) ? 4 : 0;
+  const titleBonus = terms.reduce((total, term) => total + (title.includes(term) ? 3 : 0), 0);
+  const summaryBonus = terms.reduce((total, term) => total + (summary.includes(term) ? 2 : 0), 0);
+  const statusBonus = terms.reduce((total, term) => total + (result.status.toLowerCase().includes(term) ? 1 : 0), 0);
+  const idBonus = terms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
+  return phraseBonus + titleBonus + summaryBonus + statusBonus + idBonus;
+}
+
+function tokenizeQuery(query: string): string[] {
+  return [...new Set(query.split(/[^a-z0-9._/-]+/).map((term) => term.trim()).filter((term) => term.length > 1))].slice(0, 12);
 }

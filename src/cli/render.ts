@@ -1,14 +1,20 @@
+import type { BackendCapabilityObservation } from "../core/backend-observations.ts";
 import type { MenuRecord, OrderRecord, WorkspaceRecord } from "../core/models.ts";
 
 export function renderStatusBoard(input: {
   menus: MenuRecord[];
   orders: OrderRecord[];
   workspaces: WorkspaceRecord[];
+  backendObservations: BackendCapabilityObservation[];
 }): string {
   const activeMenu = input.menus[0];
 
   if (!activeMenu) {
-    return "Yes Chef - Service Board\nNo active menus.";
+    return [
+      "Yes Chef - Service Board",
+      "No active menus.",
+      ...renderBackendObservationLines(input.backendObservations),
+    ].join("\n");
   }
 
   return [
@@ -24,6 +30,7 @@ export function renderStatusBoard(input: {
       (workspace) =>
         `workspace ${workspace.id}: ${workspace.status} ${workspace.strategy}/${workspace.cleanupStatus} -> ${workspace.path} (${workspace.isolationReason})`,
     ),
+    ...renderBackendObservationLines(input.backendObservations),
   ]
     .filter((line): line is string => Boolean(line))
     .join("\n");
@@ -49,4 +56,19 @@ function orderMeta(order: OrderRecord): string {
       : ` ${order.kind}`;
 
   return ` (${order.agentId} -> ${order.backend}${order.backendAgent ? `:${order.backendAgent}` : ""}, ${order.mode}, retry ${order.retryCount},${relation}${capability})`;
+}
+
+function renderBackendObservationLines(observations: BackendCapabilityObservation[]): string[] {
+  if (observations.length === 0) {
+    return [];
+  }
+
+  return [
+    "",
+    "Backend Learning:",
+    ...observations.map(
+      (observation) =>
+        `backend ${observation.backendId}: runs=${observation.sampleCount}, managed=${observation.managedSuccess}, delegate=${observation.delegateSuccess}, write=${observation.writeSuccess}, browser=${observation.browserSuccess}, tools=${observation.toolSurfaces.join("/") || "none"}`,
+    ),
+  ];
 }
